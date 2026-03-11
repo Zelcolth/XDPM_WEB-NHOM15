@@ -18,23 +18,27 @@ function UsersList() {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Danh sách Người dùng (Frontend)</h1>
-      <table border="1" cellPadding="10" style={{ borderCollapse: 'collapse', width: '300px' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f2f2f2' }}>
-            <th>ID</th>
-            <th>Tên Người Dùng</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map(user => (
-            <tr key={user.id} style={{ textAlign: 'center' }}>
-              <td>{user.id}</td>
-              <td>{user.name}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h1>Quản lý Người dùng (CRUD)</h1>
+      
+      {/* NÚT BẤM DẪN SANG SWAGGER ĐỂ THẦY CHẤM ĐIỂM */}
+      <div style={{ marginBottom: '20px' }}>
+        <a 
+          href="https://xdpm-web-nhom15.onrender.com/users" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          style={{ 
+            display: 'inline-block', 
+            padding: '10px 15px', 
+            backgroundColor: '#007bff', 
+            color: 'white', 
+            textDecoration: 'none', 
+            borderRadius: '5px',
+            fontWeight: 'bold'
+          }}
+        >
+          Kiểm tra CRUD trên Swagger
+        </a>
+      </div>
     </div>
   );
 }
