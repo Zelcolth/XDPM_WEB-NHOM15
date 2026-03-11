@@ -47,7 +47,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Đường dẫn BASE_FE/users mà thầy yêu cầu */}
+        {/* Đường dẫn BASE_FE/users */}
+        <Route path="/" element={<UsersList />} />
         <Route path="/users" element={<UsersList />} />
       </Routes>
     </BrowserRouter>
