@@ -23,7 +23,7 @@ function UsersList() {
       {/* NÚT BẤM DẪN SANG SWAGGER ĐỂ THẦY CHẤM ĐIỂM */}
       <div style={{ marginBottom: '20px' }}>
         <a 
-          href="https://xdpm-web-nhom15.onrender.com/users" 
+          href="https://xdpm-web-nhom15.onrender.com/api/documentation" 
           target="_blank" 
           rel="noopener noreferrer"
           style={{ 
