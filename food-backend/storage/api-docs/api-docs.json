@@ -1,8 +1,8 @@
 {
     "openapi": "3.0.0",
     "info": {
-        "title": "API Quản Lý Người Dùng",
-        "description": "Tài liệu API cho đồ án nhóm (có hỗ trợ test trực tiếp)",
+        "title": "API Project",
+        "description": "Tài liệu API cho đồ án nhóm 15",
         "version": "1.0.0"
     },
     "paths": {
