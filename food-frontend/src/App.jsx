@@ -1,57 +1,125 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-function UsersList() {
-  const [users, setUsers] = useState([]);
-
-  useEffect(() => {
-    // Gọi API từ Backend Laravel (nhớ đảm bảo Laravel đang chạy ở một terminal khác nhé)
-    axios.get('http://127.0.0.1:8000/users')
-      .then(response => {
-        setUsers(response.data);
-      })
-      .catch(error => {
-        console.error("Lỗi khi gọi API:", error);
-      });
-  }, []);
-
-  return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Quản lý Người dùng (CRUD)</h1>
-      
-      {/* NÚT BẤM DẪN SANG SWAGGER ĐỂ THẦY CHẤM ĐIỂM */}
-      <div style={{ marginBottom: '20px' }}>
-        <a 
-          href="https://xdpm-web-nhom15.onrender.com/api/documentation" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          style={{ 
-            display: 'inline-block', 
-            padding: '10px 15px', 
-            backgroundColor: '#007bff', 
-            color: 'white', 
-            textDecoration: 'none', 
-            borderRadius: '5px',
-            fontWeight: 'bold'
-          }}
-        >
-          Kiểm tra CRUD trên Swagger
-        </a>
-      </div>
-    </div>
-  );
-}
+import './App.css'; // Gọi file CSS vào đây!
 
 function App() {
+  const [users, setUsers] = useState([]); 
+  const [newName, setNewName] = useState(''); 
+  const [editingId, setEditingId] = useState(null); 
+  const [editName, setEditName] = useState(''); 
+
+  // URL Backend
+  const apiUrl = 'https://xdpm-web-nhom15.onrender.com/users';
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch(apiUrl);
+      const data = await response.json();
+      setUsers(data);
+    } catch (error) {
+      console.error("Lỗi dữ liệu:", error);
+    }
+  };
+
+  useEffect(() => { fetchUsers(); }, []);
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return alert("Vui lòng nhập tên!");
+    await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    });
+    setNewName('');
+    fetchUsers();
+  };
+
+  const handleUpdate = async () => {
+    await fetch(`${apiUrl}/${editingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: editName })
+    });
+    setEditingId(null);
+    setEditName('');
+    fetchUsers();
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Xác nhận xóa người dùng này?")) return;
+    await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+    fetchUsers();
+  };
+
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Đường dẫn BASE_FE/users */}
-        <Route path="/" element={<UsersList />} />
-        <Route path="/users" element={<UsersList />} />
-      </Routes>
-    </BrowserRouter>
+    <div className="app-container">
+      <h1 className="page-title">Quản lý Người dùng</h1>
+      
+      <div className="header-actions">
+        <a href="https://xdpm-web-nhom15.onrender.com/api/documentation" target="_blank" rel="noopener noreferrer" className="btn-swagger">
+          🚀 Xem API trên Swagger
+        </a>
+      </div>
+
+      <section className="form-card">
+        <h2 className="form-title">Thêm Người dùng mới</h2>
+        <div className="input-group">
+          <input 
+            type="text" 
+            placeholder="Nhập tên người dùng mới..." 
+            value={newName} 
+            onChange={(e) => setNewName(e.target.value)}
+            className="input-modern"
+          />
+          <button onClick={handleAdd} className="btn-add">Thêm Mới</button>
+        </div>
+      </section>
+
+      <section className="table-card">
+        <table className="user-table">
+          <thead>
+            <tr>
+              <th className="th-id">ID</th>
+              <th>Tên User</th>
+              <th className="th-actions">Hành động</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map(user => (
+              <tr key={user.id}>
+                <td className="td-center">{user.id}</td>
+                <td>
+                  {editingId === user.id ? (
+                    <input 
+                      type="text" 
+                      value={editName} 
+                      onChange={(e) => setEditName(e.target.value)} 
+                      className="input-edit"
+                    />
+                  ) : (
+                    user.name
+                  )}
+                </td>
+                <td>
+                  <div className="action-btn-group">
+                    {editingId === user.id ? (
+                      <>
+                        <button onClick={handleUpdate} className="btn-save">Lưu</button>
+                        <button onClick={() => setEditingId(null)} className="btn-cancel">Hủy</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => { setEditingId(user.id); setEditName(user.name); }} className="btn-edit">Sửa</button>
+                        <button onClick={() => handleDelete(user.id)} className="btn-delete">Xóa</button>
+                      </>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    </div>
   );
 }
 
