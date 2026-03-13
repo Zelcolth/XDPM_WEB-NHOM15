@@ -7,9 +7,9 @@ use Illuminate\Http\Request;
 
 /**
  * @OA\Info(
- * title="API Quản Lý Người Dùng",
+ * title="API Project",
  * version="1.0.0",
- * description="Tài liệu API cho đồ án nhóm (có hỗ trợ test trực tiếp)"
+ * description="Tài liệu API cho đồ án nhóm 15"
  * )
  */
 class UserController extends Controller
