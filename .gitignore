@@ -1,0 +1,14 @@
+# --- Rác Backend (Laravel) ---
+/backend/vendor/
+/backend/.env
+/backend/public/storage
+/backend/phpunit.xml
+
+# --- Rác Frontend (React) ---
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+
+# --- Rác Hệ điều hành ---
+.DS_Store
+Thumbs.db
