@@ -15,6 +15,12 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // Ai đặt
+            $table->decimal('total_price', 15, 2); // Tổng tiền
+            $table->string('status')->default('pending'); // Trạng thái: pending, shipping, completed, cancelled
+            $table->string('address'); // Địa chỉ giao
+            $table->string('phone'); // SĐT người nhận
+            $table->string('note')->nullable(); // Ghi chú cho quán
             $table->timestamps();
         });
     }

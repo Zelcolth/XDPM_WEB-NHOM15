@@ -15,6 +15,12 @@ class CreateProductsTable extends Migration
     {
         Schema::create('products', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('category_id')->constrained()->onDelete('cascade'); 
+            $table->string('name'); // Tên món
+            $table->decimal('price', 15, 2); // Giá tiền
+            $table->text('description')->nullable(); // Mô tả
+            $table->string('image')->nullable(); // Link ảnh
+            $table->boolean('is_available')->default(true); // Còn hàng hay hết
             $table->timestamps();
         });
     }

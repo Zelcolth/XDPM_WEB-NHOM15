@@ -15,6 +15,8 @@ class CreateCategoriesTable extends Migration
     {
         Schema::create('categories', function (Blueprint $table) {
             $table->id();
+            $table->string('name'); // Tên danh mục (Cơm, Nước, Ăn vặt...)
+            $table->string('image')->nullable(); // Link ảnh
             $table->timestamps();
         });
     }

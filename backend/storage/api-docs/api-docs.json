@@ -1,0 +1,40 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Tài liệu API VèoFood",
+        "description": "Tài liệu API cho Đồ án VèoFood - Nhóm 15.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000/api",
+            "description": "VèoFood API Server"
+        }
+    ],
+    "paths": {
+        "/products": {
+            "get": {
+                "tags": [
+                    "Món Ăn (Products)"
+                ],
+                "summary": "Lấy danh sách tất cả món ăn",
+                "description": "Trả về mảng dữ liệu món ăn, kèm theo thông tin danh mục (category) của món đó.",
+                "operationId": "getProductsList",
+                "responses": {
+                    "200": {
+                        "description": "Thao tác thành công"
+                    },
+                    "500": {
+                        "description": "Lỗi server"
+                    }
+                }
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Món Ăn (Products)",
+            "description": "Món Ăn (Products)"
+        }
+    ]
+}
