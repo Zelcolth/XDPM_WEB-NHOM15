@@ -110,7 +110,7 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catAnVat,
                 'name' => 'Bánh Tráng Trộn',
                 'price' => 20000,
-                'description' => 'Chua cay mặn ngọt đủ vị, topping ngập tràn.',
+                'description' => 'Chua cay mặn ngọt đủ vị, composer require darkaonline/l5-swaggertopping ngập tràn.',
                 'image' => 'https://images.unsplash.com/photo-1649313271168-52ba71ab669a?w=500&q=80',
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
