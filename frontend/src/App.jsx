@@ -1,13 +1,12 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
+import OrderItem from './pages/OrderItem';
 import Checkout from './pages/Checkout';
-
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/" element={<OrderItem />} /> //Để tạm thời, sau này sẽ đổi thành trang chủ
+        <Route path="/checkout" element={<Checkout />} /> 
       </Routes>
     </BrowserRouter>
   );
