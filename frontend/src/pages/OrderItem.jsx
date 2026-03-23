@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import phoImg from '../assets/Phol.png';
 import banhmiImg from '../assets/banhmi.png';
 import sushiImg from '../assets/sushi.png';
@@ -6,6 +7,7 @@ import heroImg from '../assets/hero.png';
 
 export default function Home() {
   const [showAll, setShowAll] = useState(false);
+  const navigate = useNavigate();
   
   // Dữ liệu mẫu giống trong thiết kế
   const categories = ['Tất cả', 'Pizza', 'Burger', 'Phở', 'Sushi', 'Tráng miệng'];
@@ -197,7 +199,7 @@ export default function Home() {
                 <span className="font-bold text-lg">Tổng cộng</span>
                 <span className="font-bold text-xl">$36.50</span>
               </div>
-              <button className="w-full mt-4 bg-[#F97316] text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-200">
+              <button onClick={() => navigate('/checkout')} className="w-full mt-4 bg-[#F97316] text-white py-3 rounded-xl font-bold hover:bg-orange-600 transition shadow-lg shadow-orange-200">
                 TIẾN HÀNH THANH TOÁN
               </button>
             </div>
