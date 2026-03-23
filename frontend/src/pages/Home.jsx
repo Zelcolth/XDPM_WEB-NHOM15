@@ -63,14 +63,14 @@ export default function Home() {
     />
 
     <button
-      onClick={() => navigate('/login')}
+      onClick={() => navigate('/auth')}
       className="text-sm px-4 py-2 border rounded-full hover:bg-gray-100"
     >
       Đăng nhập
     </button>
 
     <button
-      onClick={() => navigate('/register')}
+      onClick={() => navigate('/auth')}
       className="text-sm px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600"
     >
       Đăng ký
