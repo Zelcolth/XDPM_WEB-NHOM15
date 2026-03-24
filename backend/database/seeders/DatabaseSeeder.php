@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Admin VèoFood',
                 'email' => 'admin@veofood.com',
-                'password' => Hash::make('123456'),
+                'password' => Hash::make('Admin1234'),
                 'role' => 'admin',
                 'phone' => '0988888888',
                 'address' => 'Trụ sở chính VèoFood',
