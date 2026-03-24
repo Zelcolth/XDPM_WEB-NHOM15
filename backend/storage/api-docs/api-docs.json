@@ -7,11 +7,59 @@
     },
     "servers": [
         {
-            "url": "http://localhost:8000/api",
+            "url": "http://my-default-host.com",
             "description": "VèoFood API Server"
         }
     ],
     "paths": {
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "password": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/api/categories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "List categories",
+                "operationId": "3f5817a34833d0a1f4af4548dd3aeaba",
+                "responses": {
+                    "200": {
+                        "description": "List"
+                    }
+                }
+            }
+        },
         "/products": {
             "get": {
                 "tags": [
@@ -32,6 +80,14 @@
         }
     },
     "tags": [
+        {
+            "name": "Auth",
+            "description": "Authentication endpoints"
+        },
+        {
+            "name": "Categories",
+            "description": "Category management"
+        },
         {
             "name": "Món Ăn (Products)",
             "description": "Món Ăn (Products)"

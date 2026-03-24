@@ -27,7 +27,7 @@ Route::middleware('auth:sanctum')->post('/logout', [App\Http\Controllers\AuthCon
 // Categories
 Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index']);
 Route::get('/categories/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum','admin'])->group(function () {
     Route::post('/categories', [App\Http\Controllers\CategoryController::class, 'store']);
     Route::put('/categories/{id}', [App\Http\Controllers\CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [App\Http\Controllers\CategoryController::class, 'destroy']);
