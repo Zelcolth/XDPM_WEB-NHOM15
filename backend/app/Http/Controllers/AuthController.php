@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 /**
  * @OA\Tag(
  *     name="Auth",
- *     description="Authentication endpoints"
+ *     description="Các API xác thực"
  * )
  */
 class AuthController extends Controller
@@ -19,12 +19,28 @@ class AuthController extends Controller
      * Register a new user
      *
      * @OA\Post(
-     *     path="/api/register",
+     *     path="/register",
      *     tags={"Auth"},
-     *     @OA\RequestBody(@OA\MediaType(mediaType="application/json" ,
-     *         @OA\Schema(@OA\Property(property="name", type="string"), @OA\Property(property="email", type="string"), @OA\Property(property="password", type="string"))
-     *     )),
-     *     @OA\Response(response=200, description="OK")
+    *     summary="Đăng ký người dùng mới",
+    *     @OA\RequestBody(
+    *         required=true,
+    *         @OA\JsonContent(
+    *             required={"name","email","password","password_confirmation"},
+    *             @OA\Property(property="name", type="string", example="Nguyen Van A"),
+    *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+    *             @OA\Property(property="password", type="string", format="password", example="abc12345"),
+    *             @OA\Property(property="password_confirmation", type="string", format="password", example="abc12345")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Đăng ký thành công",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="user", type="object"),
+    *             @OA\Property(property="token", type="string", example="1|abcdef...")
+    *         )
+    *     ),
+    *     @OA\Response(response=422, description="Lỗi xác thực dữ liệu")
      * )
      */
     public function register(Request $request)
@@ -63,6 +79,30 @@ class AuthController extends Controller
 
     /**
      * Login user
+        *
+        * @OA\Post(
+        *     path="/login",
+        *     tags={"Auth"},
+        *     summary="Đăng nhập và nhận access token",
+        *     @OA\RequestBody(
+        *         required=true,
+        *         @OA\JsonContent(
+        *             required={"email","password"},
+        *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+        *             @OA\Property(property="password", type="string", format="password", example="abc12345")
+        *         )
+        *     ),
+        *     @OA\Response(
+        *         response=200,
+        *         description="Đăng nhập thành công",
+        *         @OA\JsonContent(
+        *             @OA\Property(property="user", type="object"),
+        *             @OA\Property(property="token", type="string", example="1|abcdef...")
+        *         )
+        *     ),
+        *     @OA\Response(response=401, description="Sai thông tin đăng nhập"),
+        *     @OA\Response(response=422, description="Lỗi xác thực dữ liệu")
+        * )
      */
     public function login(Request $request)
     {
@@ -92,6 +132,20 @@ class AuthController extends Controller
 
     /**
      * Logout (revoke current token)
+        *
+        * @OA\Post(
+        *     path="/logout",
+        *     tags={"Auth"},
+        *     summary="Đăng xuất người dùng hiện tại",
+        *     description="Yêu cầu Sanctum Bearer token",
+        *     security={{"sanctum":{}}},
+        *     @OA\Response(
+        *         response=200,
+        *         description="Đăng xuất thành công",
+        *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Logged out"))
+        *     ),
+        *     @OA\Response(response=401, description="Chưa xác thực")
+        * )
      */
     public function logout(Request $request)
     {
