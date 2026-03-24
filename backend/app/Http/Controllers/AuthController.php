@@ -32,7 +32,18 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6|confirmed',
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed',
+                'regex:/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/' // at least one letter and one number
+            ],
+        ],[
+            'password.regex' => 'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số.',
+            'password.min' => 'Mật khẩu phải có tối thiểu 8 ký tự.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email đã tồn tại.'
         ]);
 
         if ($validator->fails()) {
@@ -57,7 +68,11 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
-            'password' => 'required|string',
+            'password' => ['required','string','min:8','regex:/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$/'],
+        ],[
+            'email.email' => 'Email không đúng định dạng.',
+            'password.min' => 'Mật khẩu phải có tối thiểu 8 ký tự.',
+            'password.regex' => 'Mật khẩu phải bao gồm ít nhất một chữ và một số.'
         ]);
 
         if ($validator->fails()) {
