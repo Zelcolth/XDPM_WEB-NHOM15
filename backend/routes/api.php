@@ -18,3 +18,14 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::get('/products', [App\Http\Controllers\ProductController::class, 'index']);
+
+// Auth routes
+Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
+Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
+
+// Category routes
+Route::middleware('auth:sanctum')->group(function () {
+  Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout']);
+  Route::apiResource('categories', App\Http\Controllers\CategoryController::class);
+});
+Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index']);
