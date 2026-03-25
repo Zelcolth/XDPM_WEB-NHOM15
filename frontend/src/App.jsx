@@ -3,7 +3,9 @@ import OrderItem from './pages/OrderItem';
 import Checkout from './pages/Checkout';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
+import Account from './pages/Account';
 function App() {
+
   return (
     <BrowserRouter>
       <Routes>
@@ -11,6 +13,7 @@ function App() {
         <Route path="/checkout" element={<Checkout />} /> 
         <Route path="/order" element={<OrderItem />} />
         <Route path="/auth" element={<Auth />} />
+        <Route path="/account" element={<Account />} />
       </Routes>
     </BrowserRouter>
   );
