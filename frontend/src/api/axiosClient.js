@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.PROD
+    ? 'https://xdpm-web-nhom15.onrender.com/api'
+    : 'http://localhost:8000/api';
+
 const axiosClient = axios.create({
-    baseURL: 'http://localhost:8000/api', // Đường dẫn tới Backend Laravel của bạn
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
     },
