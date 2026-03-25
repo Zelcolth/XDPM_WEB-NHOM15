@@ -23,5 +23,5 @@ RUN composer install --no-dev --optimize-autoloader
 # Cấp quyền cho thư mục chứa ảnh và cache
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
-# Khởi động server Laravel (Render sẽ tự động cấp biến môi trường $PORT)
-CMD php artisan serve --host=0.0.0.0 --port=${PORT:-10000}
+# Khởi động service: clear cache, cache config, generate Swagger rồi mới serve
+CMD ["sh", "-lc", "php artisan optimize:clear && php artisan config:cache && php artisan l5-swagger:generate && php artisan serve --host=0.0.0.0 --port=${PORT:-10000}"]

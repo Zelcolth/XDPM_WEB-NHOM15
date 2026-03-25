@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axiosClient, { setAuthToken } from "../api/axiosClient";
 
 export default function Auth() {
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState("");
@@ -14,6 +15,15 @@ export default function Auth() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const mode = new URLSearchParams(location.search).get('mode');
+    if (mode === 'register') {
+      setIsLogin(false);
+    } else if (mode === 'login') {
+      setIsLogin(true);
+    }
+  }, [location.search]);
 
   // ================= LOGIN =================
   const handleLogin = async () => {

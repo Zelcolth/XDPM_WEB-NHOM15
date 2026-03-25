@@ -117,10 +117,10 @@ export default function Home() {
         <div className="flex gap-3">
           {!isLoggedIn ? (
             <>
-              <button onClick={() => navigate('/auth')} className="px-4 py-2 border rounded-full">
+              <button onClick={() => navigate('/auth?mode=login')} className="px-4 py-2 border rounded-full">
                 Đăng nhập
               </button>
-              <button onClick={() => navigate('/auth')} className="px-4 py-2 bg-orange-500 text-white rounded-full">
+              <button onClick={() => navigate('/auth?mode=register')} className="px-4 py-2 bg-orange-500 text-white rounded-full">
                 Đăng ký
               </button>
             </>
