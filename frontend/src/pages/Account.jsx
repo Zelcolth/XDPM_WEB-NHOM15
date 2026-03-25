@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axiosClient from '../api/axiosClient';
+import axiosClient, { setAuthToken } from '../api/axiosClient';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -25,6 +25,9 @@ export default function Account() {
           return;
         }
 
+        // ensure axios has Authorization header
+        setAuthToken(token);
+
         const res = await axiosClient.get("/user");
         const user = res.data;
 
@@ -47,8 +50,18 @@ export default function Account() {
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/auth");
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) await axiosClient.post('/logout');
+      } catch (err) {
+        console.error('Logout error', err);
+      } finally {
+        localStorage.removeItem("token");
+        setAuthToken(null);
+        navigate("/auth");
+      }
+    })();
   };
 
   const handleSave = async () => {
