@@ -155,5 +155,54 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'Logged out']);
+
     }
+
+    /**
+     * Cập nhật thông tin tài khoản người dùng
+     *
+     * @OA\Put(
+     *     path="/user",
+     *     tags={"Auth"},
+     *     summary="Cập nhật thông tin cá nhân",
+     *     security={{"sanctum":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="Nguyen Van B"),
+     *             @OA\Property(property="phone", type="string", example="0123456789"),
+     *             @OA\Property(property="address", type="string", example="123 Đường ABC")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cập nhật thành công",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="user", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=422, description="Lỗi xác thực dữ liệu")
+     * )
+     */
+    public function update(Request $request)
+    {
+        $user = $request->user();
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:500',
+        ], [
+            'name.required' => 'Họ và tên là bắt buộc.',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user->update($validator->validated());
+
+        return response()->json($user);
+    }
+
 }

@@ -24,6 +24,8 @@ Route::post('/register', [App\Http\Controllers\AuthController::class, 'register'
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->post('/logout', [App\Http\Controllers\AuthController::class, 'logout']);
 
+Route::middleware('auth:sanctum')->put('/user', [App\Http\Controllers\AuthController::class, 'update']);
+
 // Categories
 Route::get('/categories', [App\Http\Controllers\CategoryController::class, 'index']);
 Route::get('/categories/{id}', [App\Http\Controllers\CategoryController::class, 'show']);
