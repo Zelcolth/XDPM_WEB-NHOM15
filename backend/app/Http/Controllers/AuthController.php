@@ -170,7 +170,6 @@ class AuthController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="name", type="string", example="Nguyen Van B"),
-     *             @OA\Property(property="email", type="string", format="email", example="new@example.com"),
      *             @OA\Property(property="phone", type="string", example="0123456789"),
      *             @OA\Property(property="address", type="string", example="123 Đường ABC")
      *         )
@@ -191,14 +190,10 @@ class AuthController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email', 'unique:users,email,' . $user->id],
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',
         ], [
             'name.required' => 'Họ và tên là bắt buộc.',
-            'email.required' => 'Email là bắt buộc.',
-            'email.email' => 'Email không đúng định dạng.',
-            'email.unique' => 'Email đã được sử dụng.',
         ]);
 
         if ($validator->fails()) {
