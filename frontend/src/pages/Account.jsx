@@ -66,11 +66,41 @@ export default function Account() {
 
   const handleSave = async () => {
     try {
-      await axiosClient.put("/user", userData);
+      setLoading(true);
+
+      // Gửi chỉ các trường được phép sửa: name, phone, address
+      const payload = {
+        name: userData.name,
+        phone: userData.phone,
+        address: userData.address,
+      };
+
+      const res = await axiosClient.put('/user', payload);
+
+      // Backend trả về đối tượng user trực tiếp
+      const updated = res.data ?? {};
+
+      setUserData(prev => ({
+        ...prev,
+        name: updated.name ?? prev.name,
+        phone: updated.phone ?? prev.phone,
+        address: updated.address ?? prev.address,
+      }));
+
       setIsEditing(false);
-      alert("Cập nhật thành công!");
-    } catch {
-      alert("Lỗi cập nhật!");
+      alert('Cập nhật thành công!');
+    } catch (err) {
+      // Nếu backend trả lỗi validate 422, hiển thị thông tin
+      if (err.response && err.response.status === 422) {
+        const errors = err.response.data?.errors || {};
+        const msgs = Object.values(errors).flat().join('\n');
+        alert(msgs || 'Lỗi xác thực dữ liệu');
+      } else {
+        console.error('Update user error', err);
+        alert('Lỗi cập nhật!');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,30 +136,11 @@ export default function Account() {
       Trang Chủ
     </span>
 
-    <span
-      onClick={() => navigate('/about')}
-      className="cursor-pointer hover:text-orange-500"
-    >
-      Giới Thiệu
-    </span>
+    
 
-    <span
-      onClick={() => navigate('/menu')}
-      className="cursor-pointer hover:text-orange-500"
-    >
-      Thực Đơn
-    </span>
+    
 
     {/* 🔥 HIỂN THỊ KHI CÓ TOKEN */}
-    {localStorage.getItem("token") && (
-      <span
-        onClick={() => navigate('/order')}
-        className="cursor-pointer hover:text-orange-500"
-      >
-        Đơn hàng
-      </span>
-    )}
-
     <span
       onClick={() => navigate('/account')}
       className="text-orange-500 cursor-pointer"
