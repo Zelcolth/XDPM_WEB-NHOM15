@@ -59,7 +59,7 @@ class CategoryController extends Controller
     {
         $category = Category::find($id);
         if (! $category) {
-            return response()->json(['message' => 'Not found'], 404);
+            return response()->json(['message' => 'Không tìm thấy danh mục'], 404);
         }
         return response()->json($category);
     }
@@ -135,7 +135,7 @@ class CategoryController extends Controller
     {
         $category = Category::find($id);
         if (! $category) {
-            return response()->json(['message' => 'Not found'], 404);
+            return response()->json(['message' => 'Không tìm thấy danh mục'], 404);
         }
 
         $validator = Validator::make($request->all(), [
@@ -169,7 +169,7 @@ class CategoryController extends Controller
         *     @OA\Response(
         *         response=200,
         *         description="Xóa danh mục thành công",
-        *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Deleted"))
+        *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Xóa danh mục thành công"))
         *     ),
         *     @OA\Response(response=404, description="Không tìm thấy danh mục"),
         *     @OA\Response(response=401, description="Chưa xác thực"),
@@ -180,10 +180,10 @@ class CategoryController extends Controller
     {
         $category = Category::find($id);
         if (! $category) {
-            return response()->json(['message' => 'Not found'], 404);
+            return response()->json(['message' => 'Không tìm thấy danh mục'], 404);
         }
 
         $category->delete();
-        return response()->json(['message' => 'Deleted']);
+        return response()->json(['message' => 'Xóa danh mục thành công']);
     }
 }

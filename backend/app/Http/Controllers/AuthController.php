@@ -122,7 +122,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            return response()->json(['message' => 'Sai thông tin đăng nhập'], 401);
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
@@ -142,7 +142,7 @@ class AuthController extends Controller
         *     @OA\Response(
         *         response=200,
         *         description="Đăng xuất thành công",
-        *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Logged out"))
+        *         @OA\JsonContent(@OA\Property(property="message", type="string", example="Đăng xuất thành công"))
         *     ),
         *     @OA\Response(response=401, description="Chưa xác thực")
         * )
@@ -154,7 +154,7 @@ class AuthController extends Controller
             $user->currentAccessToken()->delete();
         }
 
-        return response()->json(['message' => 'Logged out']);
+        return response()->json(['message' => 'Đăng xuất thành công']);
 
     }
 

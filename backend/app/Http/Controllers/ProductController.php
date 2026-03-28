@@ -14,21 +14,71 @@ class ProductController extends Controller
      * tags={"Món Ăn (Products)"},
      * summary="Lấy danh sách tất cả món ăn",
      * description="Trả về mảng dữ liệu món ăn kèm category",
+     * @OA\Parameter(
+     *     name="keyword",
+     *     in="query",
+     *     required=false,
+     *     description="Từ khóa tìm kiếm theo tên món ăn",
+     *     @OA\Schema(type="string", example="phở")
+     * ),
      * @OA\Response(
      * response=200,
      * description="Thành công"
      * )
      * )
      */
-   public function index()
+   public function index(Request $request)
     {
-        $products = Product::with('category')->get();
+        $keyword = trim((string) ($request->query('keyword') ?? $request->query('name') ?? ''));
+
+        $query = Product::with('category');
+
+        if ($keyword !== '') {
+            $query->where('name', 'like', '%' . $keyword . '%');
+        }
+
+        $products = $query->get();
 
         return response()->json([
-            'status' => 'success',
+            'status' => 'thành công',
             'data' => $products
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/products/{id}",
+     *     operationId="getProductById",
+     *     tags={"Món Ăn (Products)"},
+     *     summary="Lấy chi tiết món ăn theo id",
+     *     description="Trả về thông tin một món ăn kèm category",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Thành công"),
+     *     @OA\Response(response=404, description="Không tìm thấy món ăn")
+     * )
+     */
+    public function show($id)
+    {
+        $product = Product::with('category')->find($id);
+
+        if (! $product) {
+            return response()->json([
+                'status' => 'thất bại',
+                'message' => 'Không tìm thấy món ăn'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'thành công',
+            'data' => $product
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     /**
      * @OA\Post(
      *     path="/products",
@@ -74,7 +124,7 @@ class ProductController extends Controller
         ]);
 
         return response()->json([
-            'status' => 'success',
+            'status' => 'thành công',
             'data' => $product
         ], 201);
     }
@@ -109,8 +159,8 @@ public function update(Request $request, $id)
 
     if (!$product) {
         return response()->json([
-            'status' => 'error',
-            'message' => 'Product not found'
+            'status' => 'thất bại',
+            'message' => 'Không tìm thấy món ăn'
         ], 404);
     }
 
@@ -128,7 +178,7 @@ public function update(Request $request, $id)
 
     // 4. Response
     return response()->json([
-        'status' => 'success',
+        'status' => 'thành công',
         'data' => $product
     ]);
 }
@@ -144,7 +194,7 @@ public function update(Request $request, $id)
  *         required=true,
  *         @OA\Schema(type="integer")
  *     ),
- *     @OA\Response(response=200, description="Deleted")
+ *     @OA\Response(response=200, description="Xóa thành công")
  * )
  */
 public function destroy($id)
@@ -153,16 +203,16 @@ public function destroy($id)
 
     if (!$product) {
         return response()->json([
-            'status' => 'error',
-            'message' => 'Product not found'
+            'status' => 'thất bại',
+            'message' => 'Không tìm thấy món ăn'
         ], 404);
     }
 
     $product->delete();
 
     return response()->json([
-        'status' => 'success',
-        'message' => 'Deleted successfully'
+        'status' => 'thành công',
+        'message' => 'Xóa món ăn thành công'
     ]);
 }
 }
