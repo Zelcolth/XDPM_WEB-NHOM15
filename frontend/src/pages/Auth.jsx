@@ -52,6 +52,7 @@ export default function Auth() {
       const res = await axiosClient.post('/login', { email, password });
 
       const token = res.data.token;
+      const role = res.data?.user?.role;
       localStorage.setItem('token', token);
       setAuthToken(token);
 
@@ -59,7 +60,11 @@ export default function Auth() {
       setMessage('Đăng nhập thành công');
       setMessageType('success');
 
-      navigate("/");
+      if (typeof role === 'string' && role.toLowerCase() === 'admin') {
+        navigate('/admin', { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
 
     } catch (err) {
 
