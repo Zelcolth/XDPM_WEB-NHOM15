@@ -159,6 +159,27 @@ class AuthController extends Controller
     }
 
     /**
+     * Lấy thông tin người dùng hiện tại
+     *
+     * @OA\Get(
+     *     path="/user",
+     *     tags={"Auth"},
+     *     summary="Lấy thông tin người dùng hiện tại",
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Thành công",
+     *         @OA\JsonContent(type="object")
+     *     ),
+     *     @OA\Response(response=401, description="Chưa xác thực")
+     * )
+     */
+    public function getMe(Request $request)
+    {
+        return response()->json($request->user());
+    }
+
+    /**
      * Cập nhật thông tin tài khoản người dùng
      *
      * @OA\Put(

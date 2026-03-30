@@ -85,7 +85,8 @@ class ProductController extends Controller
      *     operationId="createProduct",
      *     tags={"Món Ăn (Products)"},
      *     summary="Tạo món ăn mới",
-     *     description="Thêm món ăn",
+    *     description="Thêm món ăn (yêu cầu tài khoản admin)",
+    *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -100,7 +101,9 @@ class ProductController extends Controller
      *     @OA\Response(
      *         response=201,
      *         description="Tạo thành công"
-     *     )
+    *     ),
+    *     @OA\Response(response=401, description="Chưa xác thực"),
+    *     @OA\Response(response=403, description="Không có quyền truy cập")
      * )
      */
 
@@ -133,6 +136,8 @@ class ProductController extends Controller
  *     path="/products/{id}",
  *     summary="Cập nhật món ăn",
  *     tags={"Món Ăn (Products)"},
+ *     description="Cập nhật món ăn (yêu cầu tài khoản admin)",
+ *     security={{"sanctum":{}}},
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
@@ -149,7 +154,9 @@ class ProductController extends Controller
  *             @OA\Property(property="image", type="string")
  *         )
  *     ),
- *     @OA\Response(response=200, description="Updated")
+ *     @OA\Response(response=200, description="Cập nhật thành công"),
+ *     @OA\Response(response=401, description="Chưa xác thực"),
+ *     @OA\Response(response=403, description="Không có quyền truy cập")
  * )
  */
 public function update(Request $request, $id)
@@ -188,13 +195,17 @@ public function update(Request $request, $id)
  *     path="/products/{id}",
  *     summary="Xóa món ăn",
  *     tags={"Món Ăn (Products)"},
+ *     description="Xóa món ăn (yêu cầu tài khoản admin)",
+ *     security={{"sanctum":{}}},
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
  *         required=true,
  *         @OA\Schema(type="integer")
  *     ),
- *     @OA\Response(response=200, description="Xóa thành công")
+ *     @OA\Response(response=200, description="Xóa thành công"),
+ *     @OA\Response(response=401, description="Chưa xác thực"),
+ *     @OA\Response(response=403, description="Không có quyền truy cập")
  * )
  */
 public function destroy($id)
