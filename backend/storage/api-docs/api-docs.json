@@ -183,6 +183,34 @@
             }
         },
         "/user": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Lấy thông tin người dùng hiện tại",
+                "description": "Lấy thông tin người dùng hiện tại",
+                "operationId": "61a26aaad58e0ffa28758dcff3321c49",
+                "responses": {
+                    "200": {
+                        "description": "Thành công",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Auth"
@@ -513,7 +541,7 @@
                     "Món Ăn (Products)"
                 ],
                 "summary": "Tạo món ăn mới",
-                "description": "Thêm món ăn",
+                "description": "Thêm món ăn (yêu cầu tài khoản admin)",
                 "operationId": "createProduct",
                 "requestBody": {
                     "required": true,
@@ -553,8 +581,19 @@
                 "responses": {
                     "201": {
                         "description": "Tạo thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/products/{id}": {
@@ -590,6 +629,7 @@
                     "Món Ăn (Products)"
                 ],
                 "summary": "Cập nhật món ăn",
+                "description": "Cập nhật món ăn (yêu cầu tài khoản admin)",
                 "operationId": "1419d479f9340e30e67fe21a2ca525b7",
                 "parameters": [
                     {
@@ -630,15 +670,27 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Updated"
+                        "description": "Cập nhật thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
                     "Món Ăn (Products)"
                 ],
                 "summary": "Xóa món ăn",
+                "description": "Xóa món ăn (yêu cầu tài khoản admin)",
                 "operationId": "fe34b364a3f192305598b65d04d06b5d",
                 "parameters": [
                     {
@@ -653,8 +705,19 @@
                 "responses": {
                     "200": {
                         "description": "Xóa thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         }
     },
