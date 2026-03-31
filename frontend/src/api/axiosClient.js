@@ -7,7 +7,7 @@ const API_BASE_URL = import.meta.env.PROD
 const axiosClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
-        'Content-Type': 'application/json',
+        'Accept': 'application/json',
     },
 });
 
