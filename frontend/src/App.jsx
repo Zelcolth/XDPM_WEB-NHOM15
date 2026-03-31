@@ -4,16 +4,28 @@ import Checkout from './pages/Checkout';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Account from './pages/Account';
-function App() {
+import RequireAdmin from './admin/RequireAdmin';
+import AdminDashboard from './admin/pages/AdminDashboard';
+import AdminCategories from './admin/pages/AdminCategories';
+import AdminProducts from './admin/pages/AdminProducts';
+import AdminOrders from './admin/pages/AdminOrders';
 
+function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} /> //Để tạm thời, sau này sẽ đổi thành trang chủ
-        <Route path="/checkout" element={<Checkout />} /> 
+        <Route path="/" element={<Home />} />
+        <Route path="/checkout" element={<Checkout />} />
         <Route path="/order" element={<OrderItem />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/account" element={<Account />} />
+
+        <Route path="/admin" element={<RequireAdmin />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="categories" element={<AdminCategories />} />
+          <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
