@@ -163,7 +163,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Logged out"
+                                            "example": "Đăng xuất thành công"
                                         }
                                     },
                                     "type": "object"
@@ -173,6 +173,93 @@
                     },
                     "401": {
                         "description": "Chưa xác thực"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/user": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Lấy thông tin người dùng hiện tại",
+                "description": "Lấy thông tin người dùng hiện tại",
+                "operationId": "61a26aaad58e0ffa28758dcff3321c49",
+                "responses": {
+                    "200": {
+                        "description": "Thành công",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Cập nhật thông tin cá nhân",
+                "description": "Cập nhật thông tin tài khoản người dùng",
+                "operationId": "a3d0997507d30b809dddae561603021c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Nguyen Van B"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Đường ABC"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "user": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Lỗi xác thực dữ liệu"
                     }
                 },
                 "security": [
@@ -398,7 +485,7 @@
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Deleted"
+                                            "example": "Xóa danh mục thành công"
                                         }
                                     },
                                     "type": "object"
@@ -429,16 +516,208 @@
                     "Món Ăn (Products)"
                 ],
                 "summary": "Lấy danh sách tất cả món ăn",
-                "description": "Trả về mảng dữ liệu món ăn, kèm theo thông tin danh mục (category) của món đó.",
+                "description": "Trả về mảng dữ liệu món ăn kèm category",
                 "operationId": "getProductsList",
+                "parameters": [
+                    {
+                        "name": "keyword",
+                        "in": "query",
+                        "description": "Từ khóa tìm kiếm theo tên món ăn",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "phở"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Thao tác thành công"
-                    },
-                    "500": {
-                        "description": "Lỗi server"
+                        "description": "Thành công"
                     }
                 }
+            },
+            "post": {
+                "tags": [
+                    "Món Ăn (Products)"
+                ],
+                "summary": "Tạo món ăn mới",
+                "description": "Thêm món ăn (yêu cầu tài khoản admin)",
+                "operationId": "createProduct",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "price",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Trà sữa"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "example": 30000
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "image": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Tạo thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "tags": [
+                    "Món Ăn (Products)"
+                ],
+                "summary": "Lấy chi tiết món ăn theo id",
+                "description": "Trả về thông tin một món ăn kèm category",
+                "operationId": "getProductById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy món ăn"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Món Ăn (Products)"
+                ],
+                "summary": "Cập nhật món ăn",
+                "description": "Cập nhật món ăn (yêu cầu tài khoản admin)",
+                "operationId": "1419d479f9340e30e67fe21a2ca525b7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "price": {
+                                        "type": "number"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "image": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cập nhật thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Món Ăn (Products)"
+                ],
+                "summary": "Xóa món ăn",
+                "description": "Xóa món ăn (yêu cầu tài khoản admin)",
+                "operationId": "fe34b364a3f192305598b65d04d06b5d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xóa thành công"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    },
+                    "403": {
+                        "description": "Không có quyền truy cập"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         }
     },

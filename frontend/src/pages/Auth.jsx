@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import axiosClient, { setAuthToken } from "../api/axiosClient";
 
 export default function Auth() {
-
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,9 +24,16 @@ export default function Auth() {
     }
   }, [location.search]);
 
+  const switchMode = (nextIsLogin) => {
+    setIsLogin(nextIsLogin);
+    setMessage('');
+    setMessageType('');
+    setErrors({});
+    navigate(nextIsLogin ? '/auth?mode=login' : '/auth?mode=register', { replace: true });
+  };
+
   // ================= LOGIN =================
   const handleLogin = async () => {
-
     const clientErr = {};
 
     if (!email)
@@ -67,16 +73,13 @@ export default function Auth() {
       }
 
     } catch (err) {
-
       const status = err.response?.status;
 
       setErrors({});
 
-      // 🔥 FIX: override message backend
       if (status === 401) {
         setMessage('Email hoặc mật khẩu không đúng');
-      } 
-      else if (status === 422 && err.response?.data?.errors) {
+      } else if (status === 422 && err.response?.data?.errors) {
         const be = {};
         Object.entries(err.response.data.errors).forEach(([k, v]) => {
           be[k] = v.join(' ');
@@ -94,16 +97,15 @@ export default function Auth() {
 
   // ================= REGISTER =================
   const handleRegister = async () => {
-
     const clientErr = {};
 
     if (!name)
       clientErr.name = 'Họ và tên là bắt buộc.';
 
     if (!email)
-  clientErr.email = 'Email là bắt buộc.';
-  else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email))
-  clientErr.email = 'Email không đúng định dạng.';
+      clientErr.email = 'Email là bắt buộc.';
+    else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email))
+      clientErr.email = 'Email không đúng định dạng.';
 
     if (!password)
       clientErr.password = 'Mật khẩu là bắt buộc.';
@@ -122,7 +124,6 @@ export default function Auth() {
     }
 
     try {
-
       const res = await axiosClient.post('/register', {
         name,
         email,
@@ -139,9 +140,7 @@ export default function Auth() {
       setMessageType('success');
 
       navigate("/");
-
     } catch (err) {
-
       const status = err.response?.status;
 
       setErrors({});
@@ -162,122 +161,133 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FDF7F2] p-4">
-
-      <div className="w-full max-w-[850px] h-[550px] bg-white rounded-3xl shadow-2xl flex">
-
-        {/* LEFT */}
-        <div className="w-1/2 flex flex-col justify-center items-center p-10">
-
-          {isLogin ? (
-            <>
-              <h2 className="text-3xl font-bold mb-6">Đăng Nhập</h2>
+    <div className="min-h-screen flex items-center justify-center bg-[#FDF7F2] font-sans p-4">
+      <div className="relative w-full max-w-[850px] h-[550px] bg-white rounded-[2rem] shadow-2xl overflow-hidden flex">
+        <div className="w-1/2 h-full overflow-hidden relative z-10">
+          <div
+            className={`absolute inset-0 flex w-[200%] h-full transition-transform duration-700 ease-in-out ${
+              isLogin ? "translate-x-0" : "translate-x-[-50%]"
+            }`}
+          >
+            <div className="w-1/2 flex-shrink-0 flex flex-col justify-center items-center px-10">
+              <h2 className="text-3xl font-extrabold text-gray-800 mb-6">Đăng Nhập</h2>
 
               <div className="w-full space-y-4">
-
-                {}
-                {message && (
-                  <div className={`w-full p-3 rounded ${messageType === 'error'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-green-100 text-green-700'}`}>
-                    {message}
-                  </div>
-                )}
-
                 <input
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
                   placeholder="Email"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.email && <div className="text-sm text-red-500">{errors.email}</div>}
+                {errors.email && <div className="text-sm text-red-600 mt-1">{errors.email}</div>}
 
                 <input
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="Mật khẩu"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.password && <div className="text-sm text-red-500">{errors.password}</div>}
+                {errors.password && <div className="text-sm text-red-600 mt-1">{errors.password}</div>}
 
                 <button
                   onClick={handleLogin}
-                  className="w-full bg-orange-500 text-white py-3 rounded">
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition"
+                >
                   ĐĂNG NHẬP
                 </button>
               </div>
-            </>
-          ) : (
-            <>
-              <h2 className="text-3xl font-bold mb-6">Đăng Ký</h2>
+            </div>
+
+            <div className="w-1/2 flex-shrink-0 flex flex-col justify-center items-center px-10">
+              <h2 className="text-3xl font-extrabold text-gray-800 mb-6">Tạo Tài Khoản</h2>
 
               <div className="w-full space-y-4">
-
-                {message && (
-                  <div className={`w-full p-3 rounded ${messageType === 'error'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-green-100 text-green-700'}`}>
-                    {message}
-                  </div>
-                )}
-
                 <input
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
+                  type="text"
                   placeholder="Họ và tên"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.name && <div className="text-sm text-red-500">{errors.name}</div>}
+                {errors.name && <div className="text-sm text-red-600 mt-1">{errors.name}</div>}
 
                 <input
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
                   placeholder="Email"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.email && <div className="text-sm text-red-500">{errors.email}</div>}
+                {errors.email && <div className="text-sm text-red-600 mt-1">{errors.email}</div>}
 
                 <input
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="Mật khẩu"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.password && <div className="text-sm text-red-500">{errors.password}</div>}
+                {errors.password && <div className="text-sm text-red-600 mt-1">{errors.password}</div>}
 
                 <input
                   value={passwordConfirm}
-                  onChange={e => setPasswordConfirm(e.target.value)}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
                   type="password"
                   placeholder="Xác nhận mật khẩu"
-                  className="w-full p-3 bg-gray-100 rounded"
+                  className="w-full p-3 rounded-lg bg-gray-100 outline-none focus:ring-2 focus:ring-orange-400"
                 />
-                {errors.passwordConfirm && <div className="text-sm text-red-500">{errors.passwordConfirm}</div>}
+                {errors.passwordConfirm && (
+                  <div className="text-sm text-red-600 mt-1">{errors.passwordConfirm}</div>
+                )}
 
                 <button
                   onClick={handleRegister}
-                  className="w-full bg-orange-500 text-white py-3 rounded">
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-lg font-semibold transition"
+                >
                   ĐĂNG KÝ
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-1/2 h-full bg-gradient-to-br from-orange-500 to-orange-700 text-white flex flex-col justify-center items-center text-center px-8">
+          {isLogin ? (
+            <>
+              <h2 className="text-4xl font-bold mb-4">Chào Bạn Mới!</h2>
+              <p className="mb-6 opacity-90">Đăng ký để sử dụng hệ thống của chúng tôi</p>
+              <button
+                onClick={() => switchMode(false)}
+                className="border-2 border-white px-8 py-2 rounded-full hover:bg-white hover:text-orange-600 transition font-semibold"
+              >
+                ĐĂNG KÝ
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-4xl font-bold mb-4">Mừng Trở Lại!</h2>
+              <p className="mb-6 opacity-90">Nếu đã có tài khoản hãy đăng nhập</p>
+              <button
+                onClick={() => switchMode(true)}
+                className="border-2 border-white px-8 py-2 rounded-full hover:bg-white hover:text-orange-600 transition font-semibold"
+              >
+                ĐĂNG NHẬP
+              </button>
             </>
           )}
 
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="mt-6 text-orange-500">
-            {isLogin ? "Chưa có tài khoản? Đăng ký" : "Đã có tài khoản? Đăng nhập"}
-          </button>
-
+          {message && (
+            <div
+              className={`mt-6 px-4 py-2 rounded ${
+                messageType === 'error' ? 'bg-red-100 text-red-700' : 'bg-white text-orange-600'
+              }`}
+            >
+              {message}
+            </div>
+          )}
         </div>
-
-        {/* RIGHT */}
-        <div className="w-1/2 bg-orange-500 rounded-r-3xl flex items-center justify-center text-white">
-          <h1 className="text-3xl font-bold">Restaurant System</h1>
-        </div>
-
       </div>
     </div>
   );
