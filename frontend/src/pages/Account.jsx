@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
+import Toast from '../components/Toast';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function Account() {
     phone: '',
     address: ''
   });
+
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -88,16 +91,16 @@ export default function Account() {
       }));
 
       setIsEditing(false);
-      alert('Cập nhật thành công!');
+      setToast({ visible: true, message: 'Cập nhật thành công', type: 'success' });
     } catch (err) {
       // Nếu backend trả lỗi validate 422, hiển thị thông tin
       if (err.response && err.response.status === 422) {
         const errors = err.response.data?.errors || {};
         const msgs = Object.values(errors).flat().join('\n');
-        alert(msgs || 'Lỗi xác thực dữ liệu');
+        setToast({ visible: true, message: msgs || 'Lỗi xác thực dữ liệu', type: 'error' });
       } else {
         console.error('Update user error', err);
-        alert('Lỗi cập nhật!');
+        setToast({ visible: true, message: 'Lỗi cập nhật!', type: 'error' });
       }
     } finally {
       setLoading(false);
@@ -316,6 +319,13 @@ export default function Account() {
         </section>
 
       </main>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, visible: false })}
+        duration={3000}
+      />
     </div>
   );
 }

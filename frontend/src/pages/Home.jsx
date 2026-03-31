@@ -8,6 +8,7 @@ import heroImg from '../assets/hero.png';
 import gt1 from '../assets/GioiThieu/1.jpg';
 import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
+import FoodCard from '../components/FoodCard';
 
 export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
@@ -68,7 +69,7 @@ export default function Home() {
     { id: 3, name: 'Ăn vặt' }
   ];
 
-  const ITEMS_PER_PAGE = 6;
+  const ITEMS_PER_PAGE = 4;
 
   // Map products theo category: { [categoryId]: [items...] }
   const [categoryProducts, setCategoryProducts] = useState({});
@@ -89,6 +90,16 @@ export default function Home() {
       return `${base}/${imgPath}`;
     } catch {
       return imgPath;
+    }
+  };
+
+  const addToCartQuick = (item, categoryId) => {
+    // Minimal quick-add helper: integrate with cart later
+    try {
+      console.log('Quick add to cart:', item?.id ?? item);
+      // future: dispatch to cart context / API
+    } catch (e) {
+      console.error(e);
     }
   };
 
@@ -351,74 +362,58 @@ export default function Home() {
           Thực đơn
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="flex flex-col gap-6 max-w-6xl mx-auto">
           {loadingProducts ? (
             <div>Đang tải thực đơn...</div>
           ) : productsError ? (
             <div className="text-red-500">{productsError}</div>
           ) : (
-            CATEGORIES.map((cat) => (
-              <div key={cat.id} className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold">{cat.name}</h3>
+            CATEGORIES.map((cat) => {
+              const items = categoryProducts[cat.id] || [];
+              const pageIndex = currentPage[cat.id] || 0;
+              const total = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => goPage(cat.id, -1)}
-                      className="bg-white/80 hover:bg-white p-2 rounded-full shadow"
-                      aria-label={`Prev ${cat.name}`}
-                    >
-                      ❮
-                    </button>
+              return (
+                <div key={cat.id} className="relative bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-orange-600">{cat.name}</h3>
+                  </div>
 
-                    <span className="text-sm text-gray-500">Trang {(currentPage[cat.id] ?? 0) + 1} / {totalPagesFor(cat.id)}</span>
+                  {/* Arrows positioned left/right of slider */}
+                  <button
+                    onClick={() => goPage(cat.id, -1)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
+                    aria-label={`Prev ${cat.name}`}
+                  >
+                    ←
+                  </button>
 
-                    <button
-                      onClick={() => goPage(cat.id, +1)}
-                      className="bg-white/80 hover:bg-white p-2 rounded-full shadow"
-                      aria-label={`Next ${cat.name}`}
-                    >
-                      ❯
-                    </button>
+                  <button
+                    onClick={() => goPage(cat.id, +1)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
+                    aria-label={`Next ${cat.name}`}
+                  >
+                    →
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {getPageItems(cat.id).length === 0 ? (
+                      <div className="text-gray-500 col-span-2">Không có món trong danh mục này.</div>
+                    ) : (
+                      getPageItems(cat.id).map((item, idx) => (
+                        <FoodCard
+                          key={item.id}
+                          item={item}
+                          imageUrl={buildImageUrl(item.image) || [phoImg, banhmiImg, sushiImg][idx % 3]}
+                          onView={() => navigate('/menu')}
+                          onQuickAdd={() => addToCartQuick(item, cat.id)}
+                        />
+                      ))
+                    )}
                   </div>
                 </div>
-
-                <div className="grid gap-4">
-                  {getPageItems(cat.id).length === 0 ? (
-                    <div className="text-gray-500">Không có món trong danh mục này.</div>
-                  ) : (
-                    getPageItems(cat.id).map((item, idx) => (
-                      <div key={item.id} className="flex gap-3 items-start">
-                        <img src={buildImageUrl(item.image) || [phoImg, banhmiImg, sushiImg][idx % 3]} className="w-20 h-20 object-cover rounded-lg" />
-
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start">
-                            <h4 className="font-semibold">{item.name}</h4>
-                            <span className="text-orange-500 font-bold">{item.price}</span>
-                          </div>
-                          {item.description && <p className="text-sm text-gray-500">{item.description}</p>}
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => navigate('/menu')}
-                              className="bg-orange-500 text-white px-3 py-1 rounded"
-                            >
-                              Xem
-                            </button>
-
-                            <button
-                              onClick={() => addToCartQuick(item, cat.id)}
-                              className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
-                            >
-                              Thêm nhanh
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>
