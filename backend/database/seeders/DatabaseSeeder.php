@@ -13,21 +13,24 @@ class DatabaseSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        // 1. TẠO TÀI KHOẢN ADMIN & KHÁCH HÀNG
-        DB::table('users')->insert([
+        // 1. TẠO / CẬP NHẬT TÀI KHOẢN ADMIN & KHÁCH HÀNG
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@veofood.com'],
             [
                 'name' => 'Admin VèoFood',
-                'email' => 'admin@veofood.com',
                 'password' => Hash::make('Admin1234'),
                 'role' => 'admin',
                 'phone' => '0988888888',
                 'address' => 'Trụ sở chính VèoFood',
                 'created_at' => $now,
                 'updated_at' => $now,
-            ],
+            ]
+        );
+
+        DB::table('users')->updateOrInsert(
+            ['email' => 'khachhang@gmail.com'],
             [
                 'name' => 'Khách Hàng VIP',
-                'email' => 'khachhang@gmail.com',
                 'password' => Hash::make('123456'),
                 'role' => 'customer',
                 'phone' => '0912345678',
@@ -35,36 +38,49 @@ class DatabaseSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ]
-        ]);
+        );
 
-        // 2. TẠO 3 DANH MỤC MÓN ĂN
-        $catCom = DB::table('categories')->insertGetId([
-            'name' => 'Cơm Văn Phòng', 
-            'image' => 'https://images.unsplash.com/photo-1626804475297-41609ea004eb?w=500&q=80',
-            'created_at' => $now, 'updated_at' => $now
-        ]);
-        
-        $catNuoc = DB::table('categories')->insertGetId([
-            'name' => 'Trà Sữa & Nước', 
-            'image' => 'https://images.unsplash.com/photo-1558857563-b37103fac9eb?w=500&q=80',
-            'created_at' => $now, 'updated_at' => $now
-        ]);
+        // 2. TẠO / CẬP NHẬT 3 DANH MỤC MÓN ĂN
+        DB::table('categories')->updateOrInsert(
+            ['name' => 'Cơm Văn Phòng'],
+            [
+                'image' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
 
-        $catAnVat = DB::table('categories')->insertGetId([
-            'name' => 'Ăn Vặt Xế Chiều', 
-            'image' => 'https://images.unsplash.com/photo-1599490659213-e2b9527bd087?w=500&q=80',
-            'created_at' => $now, 'updated_at' => $now
-        ]);
+        DB::table('categories')->updateOrInsert(
+            ['name' => 'Trà Sữa & Nước'],
+            [
+                'image' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
 
-        // 3. TẠO 6 MÓN ĂN (Gắn vào các danh mục trên)
-        DB::table('products')->insert([
+        DB::table('categories')->updateOrInsert(
+            ['name' => 'Ăn Vặt Xế Chiều'],
+            [
+                'image' => null,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]
+        );
+
+        $catCom = DB::table('categories')->where('name', 'Cơm Văn Phòng')->value('id');
+        $catNuoc = DB::table('categories')->where('name', 'Trà Sữa & Nước')->value('id');
+        $catAnVat = DB::table('categories')->where('name', 'Ăn Vặt Xế Chiều')->value('id');
+
+        // 3. TẠO 24 MÓN ĂN (8 món mỗi danh mục)
+        $products = [
             // Cơm
             [
                 'category_id' => $catCom,
                 'name' => 'Cơm Tấm Sườn Bì Chả',
                 'price' => 45000,
                 'description' => 'Sườn nướng than hoa thơm lừng, chả trứng béo ngậy.',
-                'image' => 'https://images.unsplash.com/photo-1655070265691-1ec85116bb89?w=500&q=80',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
@@ -73,7 +89,61 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Cơm Gà Xối Mỡ',
                 'price' => 40000,
                 'description' => 'Đùi gà giòn rụm, cơm chiên tỏi đẫm vị.',
-                'image' => 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&q=80',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Bò Lúc Lắc',
+                'price' => 52000,
+                'description' => 'Bò lúc lắc mềm, ăn kèm salad và khoai tây.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Sườn Non Nướng Mật Ong',
+                'price' => 48000,
+                'description' => 'Sườn non nướng đậm vị, thơm mùi mật ong.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Thịt Kho Trứng',
+                'price' => 39000,
+                'description' => 'Thịt kho mềm, trứng thấm vị, chuẩn cơm nhà.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Cá Kho Tộ',
+                'price' => 44000,
+                'description' => 'Cá kho tộ đậm đà, ăn cùng rau luộc.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Chiên Dương Châu',
+                'price' => 42000,
+                'description' => 'Cơm chiên tơi hạt, topping tôm thịt trứng.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catCom,
+                'name' => 'Cơm Sườn Trứng Ốp La',
+                'price' => 43000,
+                'description' => 'Sườn nướng mềm kèm trứng ốp la béo thơm.',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
@@ -83,7 +153,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Trà Sữa Trân Châu Đường Đen',
                 'price' => 35000,
                 'description' => 'Trân châu mềm dẻo, sữa tươi thanh mát.',
-                'image' => 'https://images.unsplash.com/photo-1595981267035-7b04d84b4e1a?w=500&q=80',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
@@ -92,7 +162,61 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Trà Đào Cam Sả',
                 'price' => 30000,
                 'description' => 'Giải nhiệt mùa hè cực đã.',
-                'image' => 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=500&q=80',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Trà Chanh Mật Ong',
+                'price' => 25000,
+                'description' => 'Vị chanh dịu nhẹ kết hợp mật ong thanh mát.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Hồng Trà Sữa',
+                'price' => 32000,
+                'description' => 'Hồng trà đậm vị, hòa quyện cùng sữa tươi.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Cà Phê Sữa Đá',
+                'price' => 28000,
+                'description' => 'Cà phê phin truyền thống, thơm đậm và mạnh.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Nước Cam Ép',
+                'price' => 30000,
+                'description' => 'Cam tươi nguyên chất, bổ sung vitamin C.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Sinh Tố Bơ',
+                'price' => 36000,
+                'description' => 'Sinh tố bơ béo mịn, ngọt vừa phải.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catNuoc,
+                'name' => 'Matcha Latte Đá',
+                'price' => 39000,
+                'description' => 'Matcha thơm nhẹ, sữa tươi mát lạnh.',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
@@ -102,7 +226,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Khoai Tây Chiên Phô Mai',
                 'price' => 25000,
                 'description' => 'Khoai tây giòn rụm lắc phô mai đậm đà.',
-                'image' => 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=500&q=80',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ],
@@ -110,11 +234,79 @@ class DatabaseSeeder extends Seeder
                 'category_id' => $catAnVat,
                 'name' => 'Bánh Tráng Trộn',
                 'price' => 20000,
-                'description' => 'Chua cay mặn ngọt đủ vị, composer require darkaonline/l5-swaggertopping ngập tràn.',
-                'image' => 'https://images.unsplash.com/photo-1649313271168-52ba71ab669a?w=500&q=80',
+                'description' => 'Chua cay mặn ngọt đủ vị, topping ngập tràn.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Gà Viên Chiên',
+                'price' => 30000,
+                'description' => 'Gà viên chiên vàng giòn, chấm sốt cay ngọt.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Xúc Xích Chiên',
+                'price' => 22000,
+                'description' => 'Xúc xích chiên nóng giòn, ăn kèm tương ớt.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Nem Chua Rán',
+                'price' => 35000,
+                'description' => 'Nem chua rán giòn rụm, vị chua nhẹ hấp dẫn.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Bánh Gạo Cay',
+                'price' => 38000,
+                'description' => 'Bánh gạo dai mềm phủ sốt cay kiểu Hàn.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Cá Viên Chiên',
+                'price' => 24000,
+                'description' => 'Cá viên chiên dai ngon, ăn cùng sốt me.',
+                'image' => null,
+                'is_available' => true,
+                'created_at' => $now, 'updated_at' => $now
+            ],
+            [
+                'category_id' => $catAnVat,
+                'name' => 'Bánh Tráng Nướng',
+                'price' => 28000,
+                'description' => 'Bánh tráng nướng giòn thơm kiểu Đà Lạt.',
+                'image' => null,
                 'is_available' => true,
                 'created_at' => $now, 'updated_at' => $now
             ]
-        ]);
+        ];
+
+        foreach ($products as $product) {
+            DB::table('products')->updateOrInsert(
+                ['name' => $product['name']],
+                $product
+            );
+        }
+
+        // Giữ đúng danh sách món của seed cho 3 danh mục, loại bỏ món dư cũ.
+        $seededNames = array_column($products, 'name');
+        DB::table('products')
+            ->whereIn('category_id', [$catCom, $catNuoc, $catAnVat])
+            ->whereNotIn('name', $seededNames)
+            ->delete();
     }
 }

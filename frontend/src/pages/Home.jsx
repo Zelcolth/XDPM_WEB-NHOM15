@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import phoImg from '../assets/Phol.png';
 import banhmiImg from '../assets/banhmi.png';
 import sushiImg from '../assets/sushi.png';
-import heroImg from '../assets/hero.png';
 import gt1 from '../assets/GioiThieu/1.jpg';
 import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
+import logoImg from '../assets/Ir5Tc.png';
 import FoodCard from '../components/FoodCard';
 
 export default function Home() {
@@ -44,21 +44,48 @@ export default function Home() {
     }
   };
 
-  const slides = [heroImg, phoImg, sushiImg];
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const heroSlides = [
+    {
+      image: phoImg,
+      title: 'Món Ăn Đặc Sắc',
+      desc: 'Hương vị truyền thống, chất lượng đảm bảo',
+      cta: 'Xem Thực Đơn',
+      onClick: () => scrollToSection(menuRef),
+    },
+    {
+      image: sushiImg,
+      title: 'Không Gian Ấm Cúng',
+      desc: 'Phù hợp cho gia đình và bạn bè',
+      cta: 'Tìm Hiểu Thêm',
+      onClick: () => scrollToSection(aboutRef),
+    },
+    {
+      image: gt2,
+      title: 'Chào Mừng Đến VèoFood',
+      desc: 'Trải nghiệm ẩm thực Việt Nam đích thực',
+      cta: 'Đăng Nhập Ngay',
+      onClick: () => navigate('/auth?mode=login'),
+    },
+  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 3000);
+      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+    }, 4200);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroSlides.length]);
+
+  const goHeroSlide = (delta) => {
+    setCurrentSlide((prev) => (prev + delta + heroSlides.length) % heroSlides.length);
+  };
 
   // About section carousel
   const introSlides = [gt1, gt2, gt3];
   const [introIndex, setIntroIndex] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setIntroIndex(i => (i + 1) % introSlides.length), 3500);
+    const t = setInterval(() => setIntroIndex((i) => (i + 1) % introSlides.length), 4000);
     return () => clearInterval(t);
   }, []);
 
@@ -78,9 +105,11 @@ export default function Home() {
 
   // Trang hiện tại cho mỗi category (0-based)
   const [currentPage, setCurrentPage] = useState({});
+  const [menuFading, setMenuFading] = useState({});
 
   // timers per category để auto chuyển trang
   const timersRef = useRef({});
+  const fadeTimersRef = useRef({});
 
   const buildImageUrl = (imgPath) => {
     if (!imgPath) return null;
@@ -102,6 +131,14 @@ export default function Home() {
       console.error(e);
     }
   };
+
+  const handleViewOrder = useCallback(() => {
+    navigate('/order');
+  }, [navigate]);
+
+  const handleQuickAdd = useCallback((item) => {
+    addToCartQuick(item);
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -149,6 +186,8 @@ export default function Home() {
       // cleanup timers
       Object.values(timersRef.current || {}).forEach(t => clearTimeout(t));
       timersRef.current = {};
+      Object.values(fadeTimersRef.current || {}).forEach(t => clearTimeout(t));
+      fadeTimersRef.current = {};
     };
   }, []);
 
@@ -171,16 +210,33 @@ export default function Home() {
     delete timersRef.current[categoryId];
   };
 
+  const clearFadeTimer = (categoryId) => {
+    const t = fadeTimersRef.current[categoryId];
+    if (t) clearTimeout(t);
+    delete fadeTimersRef.current[categoryId];
+  };
+
+  const changeCategoryPage = useCallback((categoryId, getNextIndex) => {
+    clearFadeTimer(categoryId);
+    setMenuFading((prev) => ({ ...prev, [categoryId]: true }));
+
+    fadeTimersRef.current[categoryId] = setTimeout(() => {
+      setCurrentPage((prev) => {
+        const total = totalPagesFor(categoryId);
+        const cur = prev[categoryId] ?? 0;
+        const next = getNextIndex(cur, total);
+        return { ...prev, [categoryId]: next };
+      });
+      setMenuFading((prev) => ({ ...prev, [categoryId]: false }));
+      delete fadeTimersRef.current[categoryId];
+    }, 180);
+  }, [totalPagesFor]);
+
   const startCategoryTimer = (categoryId) => {
     clearCategoryTimer(categoryId);
     // đặt timeout 30s để chuyển sang trang tiếp theo
     timersRef.current[categoryId] = setTimeout(() => {
-      setCurrentPage(prev => {
-        const total = totalPagesFor(categoryId);
-        const cur = prev[categoryId] ?? 0;
-        const next = (cur + 1) % total;
-        return { ...prev, [categoryId]: next };
-      });
+      changeCategoryPage(categoryId, (cur, total) => (cur + 1) % total);
       // tiếp tục chu kỳ
       startCategoryTimer(categoryId);
     }, 30000);
@@ -192,22 +248,21 @@ export default function Home() {
   };
 
   const goPage = (categoryId, delta) => {
-    setCurrentPage(prev => {
-      const total = totalPagesFor(categoryId);
-      const cur = prev[categoryId] ?? 0;
-      const next = (cur + delta + total) % total;
-      return { ...prev, [categoryId]: next };
-    });
+    changeCategoryPage(categoryId, (cur, total) => (cur + delta + total) % total);
     // reset timer khi user tương tác
     resetCategoryTimer(categoryId);
   };
 
+  const formatPage = (current, total) => `${current + 1}/${total}`;
+
   return (
-    <div className="bg-[#FDF7F2]">
+    <div className="bg-[#f4efe9] text-slate-900">
 
       {/* ===== NAVBAR ===== */}
-      <header className="flex justify-between items-center px-10 py-4 bg-white shadow sticky top-0 z-50">
-        <div className="text-xl font-bold text-orange-500">🍴 VèoFood</div>
+      <header className="flex justify-between items-center px-6 md:px-10 py-4 bg-white/95 backdrop-blur shadow sticky top-0 z-50">
+        <div className="flex items-center">
+          <img src={logoImg} alt="VèoFood" className="h-14 md:h-11 w-auto object-contain" />
+        </div>
 
         <nav className="flex gap-6 text-sm font-medium">
           <span className="text-orange-500 cursor-pointer">Trang Chủ</span>
@@ -224,17 +279,15 @@ export default function Home() {
         <div className="flex gap-3">
           {!isLoggedIn ? (
             <>
-              <button onClick={() => navigate('/auth?mode=login')} className="px-4 py-2 border rounded-full">
+              <button onClick={() => navigate('/auth?mode=login')} className="px-4 py-2 border border-slate-300 rounded-full hover:bg-slate-50">
                 Đăng nhập
               </button>
-              <button onClick={() => navigate('/auth?mode=register')} className="px-4 py-2 bg-orange-500 text-white rounded-full">
+              <button onClick={() => navigate('/auth?mode=register')} className="px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600">
                 Đăng ký
               </button>
             </>
           ) : (
             <div className="flex items-center gap-3 relative">
-
-              {}
               <div
                 onClick={() => navigate('/order')}
                 className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer hover:bg-gray-200"
@@ -274,19 +327,40 @@ export default function Home() {
       </header>
 
       {/* ===== HERO ===== */}
-      <section className="relative h-[500px]">
-        <img src={slides[currentSlide]} className="w-full h-full object-cover" />
+      <section className="relative h-[560px] md:h-[845px] overflow-hidden">
+        {heroSlides.map((slide, index) => (
+          <img
+            key={`${slide.title}-${index}`}
+            src={slide.image}
+            alt={`VèoFood hero ${index + 1}`}
+            className={`absolute inset-0 w-full h-full object-cover will-change-opacity transition-opacity duration-1000 ease-linear ${
+              currentSlide === index ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        ))}
 
-        <div className="absolute inset-0 bg-black/40 flex flex-col justify-center items-center text-white">
-          <h1 className="text-4xl font-bold mb-4">VèoFood Restaurant</h1>
-          <p className="mb-6">Tinh hoa ẩm thực Việt</p>
-
-          <button
-            onClick={() => scrollToSection(menuRef)}
-            className="bg-orange-500 px-6 py-2 rounded-lg"
-          >
-            Xem thực đơn
-          </button>
+        <div className="absolute inset-0 bg-black/45 flex items-center justify-center text-white px-6">
+          <div className="text-center w-full max-w-3xl">
+              <div className="relative h-[250px] md:h-[280px] flex items-center justify-center">
+              {heroSlides.map((slide, idx) => (
+                <div
+                  key={`hero-content-${idx}`}
+                  className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-700 ease-linear ${
+                    currentSlide === idx ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <h2 className="text-4xl md:text-6xl font-extrabold leading-tight">{slide.title}</h2>
+                  <p className="mt-4 text-xl md:text-3xl font-semibold text-orange-50/95">{slide.desc}</p>
+                  <button
+                    onClick={slide.onClick}
+                    className="mt-8 bg-orange-500 px-8 py-3 rounded-lg font-semibold text-lg hover:bg-orange-600"
+                  >
+                    {slide.cta}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -298,12 +372,17 @@ export default function Home() {
 
           {/* Left: carousel */}
           <div className="relative">
-            <div className="overflow-hidden rounded-2xl shadow-lg">
-              <img
-                src={introSlides[introIndex]}
-                alt="Giới thiệu"
-                className="w-full h-[420px] object-cover rounded-2xl transition-all duration-700"
-              />
+            <div className="relative overflow-hidden rounded-2xl shadow-lg h-[420px]">
+              {introSlides.map((slide, idx) => (
+                <img
+                  key={`intro-${idx}`}
+                  src={slide}
+                  alt="Giới thiệu"
+                  className={`absolute inset-0 w-full h-full object-cover rounded-2xl will-change-opacity transition-opacity duration-900 ease-linear ${
+                    introIndex === idx ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
             </div>
 
             <button
@@ -357,7 +436,7 @@ export default function Home() {
       </section>
 
       {/* ===== MENU ===== */}
-      <section ref={menuRef} className="py-16 px-6 bg-[#FDF7F2]">
+      <section ref={menuRef} className="py-16 px-6 bg-[#f4efe9]">
         <h2 className="text-3xl font-bold text-center mb-10 text-orange-500">
           Thực đơn
         </h2>
@@ -374,39 +453,45 @@ export default function Home() {
               const total = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
 
               return (
-                <div key={cat.id} className="relative bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-                  <div className="flex items-center justify-between mb-3">
+                <div key={cat.id} className="relative bg-white p-5 md:p-6 rounded-2xl shadow-[0_12px_30px_rgba(15,23,42,0.08)] border border-slate-100">
+                  <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-orange-600">{cat.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                        Trang {formatPage(pageIndex, total)}
+                      </span>
+                      <button
+                        onClick={() => goPage(cat.id, -1)}
+                        className="w-9 h-9 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200"
+                        aria-label={`Prev ${cat.name}`}
+                      >
+                        ←
+                      </button>
+                      <button
+                        onClick={() => goPage(cat.id, +1)}
+                        className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600"
+                        aria-label={`Next ${cat.name}`}
+                      >
+                        →
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Arrows positioned left/right of slider */}
-                  <button
-                    onClick={() => goPage(cat.id, -1)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
-                    aria-label={`Prev ${cat.name}`}
+                  <div
+                    className={`grid md:grid-cols-2 gap-5 transition-opacity duration-300 ease-linear ${
+                      menuFading[cat.id] ? 'opacity-30' : 'opacity-100'
+                    }`}
                   >
-                    ←
-                  </button>
-
-                  <button
-                    onClick={() => goPage(cat.id, +1)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
-                    aria-label={`Next ${cat.name}`}
-                  >
-                    →
-                  </button>
-
-                  <div className="grid grid-cols-2 gap-4">
                     {getPageItems(cat.id).length === 0 ? (
-                      <div className="text-gray-500 col-span-2">Không có món trong danh mục này.</div>
+                      <div className="text-slate-500 col-span-2">Không có món trong danh mục này.</div>
                     ) : (
-                      getPageItems(cat.id).map((item, idx) => (
+                      getPageItems(cat.id).map((item) => (
                         <FoodCard
                           key={item.id}
                           item={item}
-                          imageUrl={buildImageUrl(item.image) || [phoImg, banhmiImg, sushiImg][idx % 3]}
-                          onView={() => navigate('/menu')}
-                          onQuickAdd={() => addToCartQuick(item, cat.id)}
+                          imageUrl={buildImageUrl(item.image)}
+                          onView={handleViewOrder}
+                          onQuickAdd={handleQuickAdd}
                         />
                       ))
                     )}
@@ -419,7 +504,40 @@ export default function Home() {
       </section>
 
       {/* ===== FOOTER ===== */}
-      <footer className="bg-white rounded-t-[3rem] mt-12 py-12 px-4 md:px-10"> <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8"> <div className="md:col-span-1"> <h3 className="text-xl font-bold text-gray-800 mb-4">Vèo Food</h3> <p className="text-sm text-gray-500 leading-relaxed"> Tinh hoa ẩm thực được giao tận nơi với độ chính xác tuyệt đối. Nâng tầm trải nghiệm ăn uống mỗi ngày của bạn. </p> </div> <div> <h4 className="font-bold mb-4">NỀN TẢNG</h4> <ul className="text-sm text-gray-500 space-y-2"> <li><a href="#" className="hover:text-orange-500">Về đầu bếp của chúng tôi</a></li> <li><a href="#" className="hover:text-orange-500">Sự bền vững</a></li> <li><a href="#" className="hover:text-orange-500">Đối tác</a></li> </ul> </div> <div> <h4 className="font-bold mb-4">HỖ TRỢ</h4> <ul className="text-sm text-gray-500 space-y-2"> <li><a href="#" className="hover:text-orange-500">Chính sách bảo mật</a></li> <li><a href="#" className="hover:text-orange-500">Điều khoản dịch vụ</a></li> <li><a href="#" className="hover:text-orange-500">Liên hệ</a></li> </ul> </div> <div> <h4 className="font-bold mb-4 text-right">NHẬN TIN</h4> <div className="flex bg-[#FDF7F2] rounded-full p-1"> <input type="email" placeholder="Email của bạn" className="bg-transparent pl-4 outline-none text-sm w-full" /> <button className="bg-[#8C592B] text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap hover:bg-[#6d4522]"> Đăng ký </button> </div> </div> </div> </footer>
+      <footer className="bg-[#111827] mt-12 py-12 px-4 md:px-10 text-slate-200">
+        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="md:col-span-1">
+            <h3 className="text-xl font-bold text-white mb-4">VèoFood</h3>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              Tinh hoa ẩm thực Việt Nam với nguyên liệu tươi ngon và trải nghiệm đặt món tiện lợi.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="font-bold mb-4 text-white">LIÊN KẾT</h4>
+            <ul className="text-sm text-slate-300 space-y-2">
+              <li><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-orange-300">Trang Chủ</button></li>
+              <li><button onClick={() => scrollToSection(aboutRef)} className="hover:text-orange-300">Giới Thiệu</button></li>
+              <li><button onClick={() => scrollToSection(menuRef)} className="hover:text-orange-300">Thực Đơn</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold mb-4 text-white">LIÊN HỆ</h4>
+            <ul className="text-sm text-slate-300 space-y-2">
+              <li>67 Trần Thị Nơi, P.4, Q.8, TP.HCM</li>
+              <li>024 1234 5678</li>
+              <li>info@veofood.com</li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold mb-4 text-white">GIỜ MỞ CỬA</h4>
+            <p className="text-sm text-slate-300">Thứ 2 - Chủ Nhật</p>
+            <p className="text-lg font-semibold text-orange-300">10:00 - 22:00</p>
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
