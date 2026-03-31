@@ -8,6 +8,7 @@ import heroImg from '../assets/hero.png';
 import gt1 from '../assets/GioiThieu/1.jpg';
 import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
+import FoodCard from '../components/FoodCard';
 
 export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
@@ -61,9 +62,25 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
-  const [products, setProducts] = useState([]);
+  // Các danh mục cố định theo yêu cầu
+  const CATEGORIES = [
+    { id: 1, name: 'Cơm văn phòng' },
+    { id: 2, name: 'Các loại nước' },
+    { id: 3, name: 'Ăn vặt' }
+  ];
+
+  const ITEMS_PER_PAGE = 4;
+
+  // Map products theo category: { [categoryId]: [items...] }
+  const [categoryProducts, setCategoryProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState('');
+
+  // Trang hiện tại cho mỗi category (0-based)
+  const [currentPage, setCurrentPage] = useState({});
+
+  // timers per category để auto chuyển trang
+  const timersRef = useRef({});
 
   const buildImageUrl = (imgPath) => {
     if (!imgPath) return null;
@@ -76,24 +93,114 @@ export default function Home() {
     }
   };
 
+  const addToCartQuick = (item, categoryId) => {
+    // Minimal quick-add helper: integrate with cart later
+    try {
+      console.log('Quick add to cart:', item?.id ?? item);
+      // future: dispatch to cart context / API
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
-    const fetchProducts = async () => {
+    let mounted = true;
+
+    const fetchPerCategory = async () => {
       setLoadingProducts(true);
       setProductsError('');
       try {
-        const res = await axiosClient.get('/products');
-        const items = res.data?.data ?? res.data ?? [];
-        setProducts(items);
+        const map = {};
+        for (const c of CATEGORIES) {
+          try {
+            const res = await axiosClient.get('/products', { params: { category_id: c.id } });
+            const items = res.data?.data ?? res.data ?? [];
+            // đảm bảo lọc theo category_id (nếu backend không hỗ trợ query)
+            map[c.id] = items.filter(it => Number(it.category_id) === Number(c.id));
+          } catch (err) {
+            console.error('Lỗi lấy products cho category', c.id, err);
+            map[c.id] = [];
+          }
+        }
+
+        if (!mounted) return;
+
+        setCategoryProducts(map);
+
+        // khởi tạo currentPage
+        const init = {};
+        CATEGORIES.forEach(c => { init[c.id] = 0; });
+        setCurrentPage(init);
+
+        // start timers
+        CATEGORIES.forEach(c => startCategoryTimer(c.id));
       } catch (error) {
         console.error('Lỗi lấy products:', error);
         setProductsError('Không thể tải danh sách món ăn.');
       } finally {
-        setLoadingProducts(false);
+        if (mounted) setLoadingProducts(false);
       }
     };
 
-    fetchProducts();
+    fetchPerCategory();
+
+    return () => {
+      mounted = false;
+      // cleanup timers
+      Object.values(timersRef.current || {}).forEach(t => clearTimeout(t));
+      timersRef.current = {};
+    };
   }, []);
+
+  // Helpers: pagination + timers
+  const totalPagesFor = (categoryId) => {
+    const arr = categoryProducts[categoryId] || [];
+    return Math.max(1, Math.ceil(arr.length / ITEMS_PER_PAGE));
+  };
+
+  const getPageItems = (categoryId) => {
+    const arr = categoryProducts[categoryId] || [];
+    const page = currentPage[categoryId] || 0;
+    const start = page * ITEMS_PER_PAGE;
+    return arr.slice(start, start + ITEMS_PER_PAGE);
+  };
+
+  const clearCategoryTimer = (categoryId) => {
+    const t = timersRef.current[categoryId];
+    if (t) clearTimeout(t);
+    delete timersRef.current[categoryId];
+  };
+
+  const startCategoryTimer = (categoryId) => {
+    clearCategoryTimer(categoryId);
+    // đặt timeout 30s để chuyển sang trang tiếp theo
+    timersRef.current[categoryId] = setTimeout(() => {
+      setCurrentPage(prev => {
+        const total = totalPagesFor(categoryId);
+        const cur = prev[categoryId] ?? 0;
+        const next = (cur + 1) % total;
+        return { ...prev, [categoryId]: next };
+      });
+      // tiếp tục chu kỳ
+      startCategoryTimer(categoryId);
+    }, 30000);
+  };
+
+  const resetCategoryTimer = (categoryId) => {
+    clearCategoryTimer(categoryId);
+    startCategoryTimer(categoryId);
+  };
+
+  const goPage = (categoryId, delta) => {
+    setCurrentPage(prev => {
+      const total = totalPagesFor(categoryId);
+      const cur = prev[categoryId] ?? 0;
+      const next = (cur + delta + total) % total;
+      return { ...prev, [categoryId]: next };
+    });
+    // reset timer khi user tương tác
+    resetCategoryTimer(categoryId);
+  };
 
   return (
     <div className="bg-[#FDF7F2]">
@@ -255,34 +362,58 @@ export default function Home() {
           Thực đơn
         </h2>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="flex flex-col gap-6 max-w-6xl mx-auto">
           {loadingProducts ? (
             <div>Đang tải thực đơn...</div>
           ) : productsError ? (
             <div className="text-red-500">{productsError}</div>
           ) : (
-            products.map((item, idx) => (
-              <div key={item.id} className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
-                <img 
-                  src={buildImageUrl(item.image) || [phoImg, banhmiImg, sushiImg][idx % 3]} 
-                  className="w-full h-40 object-cover rounded-lg" 
-                />
+            CATEGORIES.map((cat) => {
+              const items = categoryProducts[cat.id] || [];
+              const pageIndex = currentPage[cat.id] || 0;
+              const total = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
 
-                <h3 className="mt-3 font-bold">{item.name}</h3>
-                {item.description && <p className="text-sm text-gray-500">{item.description}</p>}
+              return (
+                <div key={cat.id} className="relative bg-white p-4 rounded-xl shadow hover:shadow-lg transition">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-bold text-orange-600">{cat.name}</h3>
+                  </div>
 
-                <div className="flex justify-between mt-3">
-                  <span className="text-orange-500 font-bold">${item.price}</span>
+                  {/* Arrows positioned left/right of slider */}
+                  <button
+                    onClick={() => goPage(cat.id, -1)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
+                    aria-label={`Prev ${cat.name}`}
+                  >
+                    ←
+                  </button>
 
                   <button
-                    onClick={() => navigate('/menu')}
-                    className="bg-orange-500 text-white px-3 py-1 rounded"
+                    onClick={() => goPage(cat.id, +1)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-orange-500 text-white shadow-lg flex items-center justify-center hover:bg-orange-600 z-20"
+                    aria-label={`Next ${cat.name}`}
                   >
-                    Xem
+                    →
                   </button>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {getPageItems(cat.id).length === 0 ? (
+                      <div className="text-gray-500 col-span-2">Không có món trong danh mục này.</div>
+                    ) : (
+                      getPageItems(cat.id).map((item, idx) => (
+                        <FoodCard
+                          key={item.id}
+                          item={item}
+                          imageUrl={buildImageUrl(item.image) || [phoImg, banhmiImg, sushiImg][idx % 3]}
+                          onView={() => navigate('/menu')}
+                          onQuickAdd={() => addToCartQuick(item, cat.id)}
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </section>
