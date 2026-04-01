@@ -265,7 +265,15 @@ export default function Home() {
         </div>
 
         <nav className="flex gap-6 text-sm font-medium">
-          <span className="text-orange-500 cursor-pointer">Trang Chủ</span>
+          <span
+            onClick={() => {
+              navigate('/');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="cursor-pointer hover:text-orange-500"
+          >
+            Trang Chủ
+          </span>
 
           <span onClick={() => scrollToSection(aboutRef)} className="cursor-pointer hover:text-orange-500">
             Giới Thiệu

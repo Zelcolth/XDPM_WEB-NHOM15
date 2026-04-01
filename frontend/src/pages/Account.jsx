@@ -133,7 +133,10 @@ export default function Account() {
   <nav className="flex gap-6 text-sm font-medium">
 
     <span
-      onClick={() => navigate('/')}
+      onClick={() => {
+        navigate('/');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }}
       className="cursor-pointer hover:text-orange-500"
     >
       Trang Chủ

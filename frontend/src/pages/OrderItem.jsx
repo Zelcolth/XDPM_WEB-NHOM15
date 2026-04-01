@@ -38,7 +38,16 @@ export default function Home() {
       <header className="flex justify-between items-center py-6 px-10 bg-white shadow-sm">
         <div className="text-2xl font-bold text-orange-500 italic">VèoFood</div>
         <nav className="hidden md:flex space-x-8 font-medium text-sm">
-          <a href="#" className="text-orange-500 border-b-2 border-orange-500 pb-1">Trang chủ</a>
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="text-orange-500 border-b-2 border-orange-500 pb-1"
+          >
+            Trang chủ
+          </button>
           <a href="#" className="text-gray-500 hover:text-orange-500">Khám phá</a>
           <a href="#" className="text-gray-500 hover:text-orange-500">Đơn hàng</a>
           <a href="#" className="text-gray-500 hover:text-orange-500">Tài khoản</a>
