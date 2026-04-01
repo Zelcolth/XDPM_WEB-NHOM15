@@ -56,6 +56,27 @@ const ensureApi = async (request, message) => {
   }
 };
 
+const toProductFormData = (payload = {}) => {
+  const formData = new FormData();
+
+  Object.entries(payload).forEach(([key, value]) => {
+    if (value === undefined || value === null || key === 'image_file') return;
+
+    if (typeof value === 'boolean') {
+      formData.append(key, value ? '1' : '0');
+      return;
+    }
+
+    formData.append(key, String(value));
+  });
+
+  if (payload.image_file instanceof File) {
+    formData.append('image_file', payload.image_file);
+  }
+
+  return formData;
+};
+
 export const adminApi = {
   async getMe() {
     const res = await axiosClient.get('/user');
@@ -113,17 +134,21 @@ export const adminApi = {
     return data;
   },
 
-  async createProduct(payload) {
+  async createProduct(payload, options = {}) {
+    const formData = toProductFormData(payload);
     const res = await ensureApi(
-      () => axiosClient.post('/products', payload),
+      () => axiosClient.post('/products', formData, options),
       'Backend chưa có API tạo món ăn (POST /products).'
     );
     return res.data;
   },
 
-  async updateProduct(id, payload) {
+  async updateProduct(id, payload, options = {}) {
+    const formData = toProductFormData(payload);
+    formData.append('_method', 'PUT');
+
     const res = await ensureApi(
-      () => axiosClient.put(`/products/${id}`, payload),
+      () => axiosClient.post(`/products/${id}`, formData, options),
       'Backend chưa có API cập nhật món ăn (PUT /products/{id}).'
     );
     return res.data;
