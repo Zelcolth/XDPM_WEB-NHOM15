@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
+import Toast from '../components/Toast';
 
 export default function Account() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function Account() {
     phone: '',
     address: ''
   });
+
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -66,11 +69,41 @@ export default function Account() {
 
   const handleSave = async () => {
     try {
-      await axiosClient.put("/user", userData);
+      setLoading(true);
+
+      // Gửi chỉ các trường được phép sửa: name, phone, address
+      const payload = {
+        name: userData.name,
+        phone: userData.phone,
+        address: userData.address,
+      };
+
+      const res = await axiosClient.put('/user', payload);
+
+      // Backend trả về đối tượng user trực tiếp
+      const updated = res.data ?? {};
+
+      setUserData(prev => ({
+        ...prev,
+        name: updated.name ?? prev.name,
+        phone: updated.phone ?? prev.phone,
+        address: updated.address ?? prev.address,
+      }));
+
       setIsEditing(false);
-      alert("Cập nhật thành công!");
-    } catch {
-      alert("Lỗi cập nhật!");
+      setToast({ visible: true, message: 'Cập nhật thành công', type: 'success' });
+    } catch (err) {
+      // Nếu backend trả lỗi validate 422, hiển thị thông tin
+      if (err.response && err.response.status === 422) {
+        const errors = err.response.data?.errors || {};
+        const msgs = Object.values(errors).flat().join('\n');
+        setToast({ visible: true, message: msgs || 'Lỗi xác thực dữ liệu', type: 'error' });
+      } else {
+        console.error('Update user error', err);
+        setToast({ visible: true, message: 'Lỗi cập nhật!', type: 'error' });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -106,30 +139,11 @@ export default function Account() {
       Trang Chủ
     </span>
 
-    <span
-      onClick={() => navigate('/about')}
-      className="cursor-pointer hover:text-orange-500"
-    >
-      Giới Thiệu
-    </span>
+    
 
-    <span
-      onClick={() => navigate('/menu')}
-      className="cursor-pointer hover:text-orange-500"
-    >
-      Thực Đơn
-    </span>
+    
 
     {/* 🔥 HIỂN THỊ KHI CÓ TOKEN */}
-    {localStorage.getItem("token") && (
-      <span
-        onClick={() => navigate('/order')}
-        className="cursor-pointer hover:text-orange-500"
-      >
-        Đơn hàng
-      </span>
-    )}
-
     <span
       onClick={() => navigate('/account')}
       className="text-orange-500 cursor-pointer"
@@ -305,6 +319,13 @@ export default function Account() {
         </section>
 
       </main>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, visible: false })}
+        duration={3000}
+      />
     </div>
   );
 }
