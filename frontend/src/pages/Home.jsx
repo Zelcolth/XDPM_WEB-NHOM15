@@ -89,12 +89,7 @@ export default function Home() {
     return () => clearInterval(t);
   }, []);
 
-  // Các danh mục cố định theo yêu cầu
-  const CATEGORIES = [
-    { id: 1, name: 'Cơm văn phòng' },
-    { id: 2, name: 'Các loại nước' },
-    { id: 3, name: 'Ăn vặt' }
-  ];
+  const [categories, setCategories] = useState([]);
 
   const ITEMS_PER_PAGE = 4;
 
@@ -147,30 +142,42 @@ export default function Home() {
       setLoadingProducts(true);
       setProductsError('');
       try {
+        const [categoriesRes, productsRes] = await Promise.all([
+          axiosClient.get('/categories'),
+          axiosClient.get('/products')
+        ]);
+
+        const rawCategories = categoriesRes.data?.data ?? categoriesRes.data ?? [];
+        const products = productsRes.data?.data ?? productsRes.data ?? [];
+
+        const normalizedCategories = rawCategories
+          .map((c) => ({ id: Number(c.id), name: c.name || `Danh mục ${c.id}` }))
+          .filter((c) => Number.isFinite(c.id));
+
         const map = {};
-        for (const c of CATEGORIES) {
-          try {
-            const res = await axiosClient.get('/products', { params: { category_id: c.id } });
-            const items = res.data?.data ?? res.data ?? [];
-            // đảm bảo lọc theo category_id (nếu backend không hỗ trợ query)
-            map[c.id] = items.filter(it => Number(it.category_id) === Number(c.id));
-          } catch (err) {
-            console.error('Lỗi lấy products cho category', c.id, err);
-            map[c.id] = [];
+        normalizedCategories.forEach((c) => {
+          map[c.id] = [];
+        });
+
+        products.forEach((item) => {
+          const cid = Number(item.category_id);
+          if (map[cid]) {
+            map[cid].push(item);
           }
-        }
+        });
 
         if (!mounted) return;
 
+        setCategories(normalizedCategories);
         setCategoryProducts(map);
 
         // khởi tạo currentPage
         const init = {};
-        CATEGORIES.forEach(c => { init[c.id] = 0; });
+        normalizedCategories.forEach(c => { init[c.id] = 0; });
         setCurrentPage(init);
 
         // start timers
-        CATEGORIES.forEach(c => startCategoryTimer(c.id));
+        normalizedCategories.forEach(c => startCategoryTimer(c.id));
       } catch (error) {
         console.error('Lỗi lấy products:', error);
         setProductsError('Không thể tải danh sách món ăn.');
@@ -455,7 +462,10 @@ export default function Home() {
           ) : productsError ? (
             <div className="text-red-500">{productsError}</div>
           ) : (
-            CATEGORIES.map((cat) => {
+            categories.length === 0 ? (
+              <div className="text-slate-500">Chưa có danh mục để hiển thị.</div>
+            ) : (
+            categories.map((cat) => {
               const items = categoryProducts[cat.id] || [];
               const pageIndex = currentPage[cat.id] || 0;
               const total = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
@@ -506,7 +516,7 @@ export default function Home() {
                   </div>
                 </div>
               );
-            })
+            }))
           )}
         </div>
       </section>
