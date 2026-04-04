@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use App\Models\Order;
 use App\Models\Product;
 
@@ -15,15 +17,23 @@ class OrderController extends Controller
      *     path="/orders",
      *     tags={"Orders"},
      *     summary="Lấy danh sách đơn hàng",
+     *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
      *         description="Thành công"
-     *     )
+     *     ),
+     *     @OA\Response(response=401, description="Chưa xác thực")
      * )
      */
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with('items.product')->get();
+        $query = Order::with('items.product');
+
+        if ($request->user()->role !== 'admin') {
+            $query->where('user_id', $request->user()->id);
+        }
+
+        $orders = $query->get();
 
         return response()->json([
             'status' => 'success',
@@ -36,16 +46,11 @@ class OrderController extends Controller
  *     path="/orders",
  *     tags={"Orders"},
  *     summary="Tạo đơn hàng",
+ *     security={{"sanctum":{}}},
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
- *             required={"user_id","items"},
- *             
- *             @OA\Property(
- *                 property="user_id",
- *                 type="integer",
- *                 example=1
- *             ),
+ *             required={"items"},
  *             
  *             @OA\Property(
  *                 property="items",
@@ -83,35 +88,45 @@ class OrderController extends Controller
  *             )
  *         )
  *     ),
- *     @OA\Response(response=200, description="OK")
+ *     @OA\Response(response=200, description="OK"),
+ *     @OA\Response(response=401, description="Chưa xác thực")
  * )
  */
     public function store(Request $request)
     {
-        DB::beginTransaction();
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'address' => 'required|string',
+            'phone' => 'required|string'
+        ]);
 
         try {
-            $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'items' => 'required|array|min:1',
-                'items.*.product_id' => 'required|exists:products,id',
-                'items.*.quantity' => 'required|integer|min:1',
-                'address' => 'required|string',
-                'phone' => 'required|string'
-            ]);
-
             $productIds = collect($request->items)->pluck('product_id');
             $products = Product::whereIn('id', $productIds)->get()->keyBy('id');
+
+            foreach ($request->items as $item) {
+                $product = $products->get($item['product_id']);
+                if (! $product || ! (bool) $product->is_available) {
+                    return response()->json([
+                        'status' => 'error',
+                        'message' => 'Sản phẩm không tồn tại hoặc không khả dụng'
+                    ], 422);
+                }
+            }
 
             $total = 0;
 
             foreach ($request->items as $item) {
-                $product = $products[$item['product_id']];
+                $product = $products->get($item['product_id']);
                 $total += $product->price * $item['quantity'];
             }
 
+            DB::beginTransaction();
+
             $order = Order::create([
-                'user_id' => $request->user_id,
+                'user_id' => $request->user()->id,
                 'total_price' => $total,
                 'status' => 'pending',
                 'address' => $request->address,
@@ -120,7 +135,7 @@ class OrderController extends Controller
             ]);
 
             foreach ($request->items as $item) {
-                $product = $products[$item['product_id']];
+                $product = $products->get($item['product_id']);
 
                 $order->items()->create([
                     'product_id' => $product->id,
@@ -136,12 +151,20 @@ class OrderController extends Controller
                 'data' => $order->load('items.product')
             ]);
 
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
-            DB::rollBack();
+            if (DB::transactionLevel() > 0) {
+                DB::rollBack();
+            }
+            Log::error('Create order failed', [
+                'user_id' => optional($request->user())->id,
+                'error' => $e->getMessage(),
+            ]);
 
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
+                'message' => 'Không thể tạo đơn hàng vào lúc này'
             ], 500);
         }
     }
@@ -151,6 +174,7 @@ class OrderController extends Controller
  *     path="/orders/{id}/pay",
  *     tags={"Orders"},
  *     summary="Thanh toán đơn hàng",
+ *     security={{"sanctum":{}}},
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
@@ -158,10 +182,11 @@ class OrderController extends Controller
  *         @OA\Schema(type="integer")
  *     ),
  *     @OA\Response(response=200, description="Thanh toán thành công"),
- *     @OA\Response(response=404, description="Không tìm thấy đơn hàng")
+ *     @OA\Response(response=404, description="Không tìm thấy đơn hàng"),
+ *     @OA\Response(response=401, description="Chưa xác thực")
  * )
  */
-public function pay($id)
+public function pay(Request $request, $id)
 {
     $order = Order::find($id);
 
@@ -172,11 +197,25 @@ public function pay($id)
         ], 404);
     }
 
+    if ($request->user()->role !== 'admin' && (int) $order->user_id !== (int) $request->user()->id) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Forbidden'
+        ], 403);
+    }
+
     // ❌ nếu đã thanh toán rồi
     if ($order->status === 'paid') {
         return response()->json([
             'status' => 'error',
             'message' => 'Order already paid'
+        ], 400);
+    }
+
+    if ($order->status === 'cancelled') {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Cancelled order cannot be paid'
         ], 400);
     }
 
@@ -197,6 +236,7 @@ public function pay($id)
  *     path="/orders/{id}",
  *     tags={"Orders"},
  *     summary="Chi tiết đơn hàng",
+ *     security={{"sanctum":{}}},
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
@@ -204,10 +244,11 @@ public function pay($id)
  *         @OA\Schema(type="integer")
  *     ),
  *     @OA\Response(response=200, description="OK"),
- *     @OA\Response(response=404, description="Not found")
+ *     @OA\Response(response=404, description="Not found"),
+ *     @OA\Response(response=401, description="Chưa xác thực")
  * )
  */
-public function show($id)
+public function show(Request $request, $id)
 {
     $order = Order::with('items.product')->find($id);
 
@@ -216,6 +257,13 @@ public function show($id)
             'status' => 'error',
             'message' => 'Order not found'
         ], 404);
+    }
+
+    if ($request->user()->role !== 'admin' && (int) $order->user_id !== (int) $request->user()->id) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Forbidden'
+        ], 403);
     }
 
     return response()->json([
@@ -229,6 +277,7 @@ public function show($id)
  *     path="/orders/{id}/status",
  *     tags={"Orders"},
  *     summary="Cập nhật trạng thái đơn hàng",
+ *     security={{"sanctum":{}}},
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
@@ -242,7 +291,9 @@ public function show($id)
  *             @OA\Property(property="status", type="string", example="shipping")
  *         )
  *     ),
- *     @OA\Response(response=200, description="OK")
+ *     @OA\Response(response=200, description="OK"),
+ *     @OA\Response(response=401, description="Chưa xác thực"),
+ *     @OA\Response(response=403, description="Không có quyền truy cập")
  * )
  */
 public function updateStatus(Request $request, $id)
