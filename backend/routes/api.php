@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\OrderController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -40,3 +40,9 @@ Route::middleware(['auth:sanctum','admin'])->group(function () {
     Route::put('/products/{id}', [App\Http\Controllers\ProductController::class, 'update']);
     Route::delete('/products/{id}', [App\Http\Controllers\ProductController::class, 'destroy']);
 });
+//Order 
+Route::get('/orders', [OrderController::class, 'index']);
+Route::post('/orders', [OrderController::class, 'store']);
+Route::post('/orders/{id}/pay', [OrderController::class, 'pay']);
+Route::get('/orders/{id}', [OrderController::class, 'show']);
+Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);

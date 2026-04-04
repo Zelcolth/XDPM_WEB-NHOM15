@@ -12,6 +12,177 @@
         }
     ],
     "paths": {
+        "/orders": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Lấy danh sách đơn hàng",
+                "operationId": "8f3183bfa0ecb8a2c864cbf972b8061d",
+                "responses": {
+                    "200": {
+                        "description": "Thành công"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Tạo đơn hàng",
+                "operationId": "b6490f9d9026dbe871b41207e118fffb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "user_id",
+                                    "items"
+                                ],
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "HCM"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "example": "Giao giờ hành chính"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
+        "/orders/{id}/pay": {
+            "post": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Thanh toán đơn hàng",
+                "operationId": "5ed1f869ddde42a25af8ff489a1c0f30",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thanh toán thành công"
+                    },
+                    "404": {
+                        "description": "Không tìm thấy đơn hàng"
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Chi tiết đơn hàng",
+                "operationId": "79c1e32fc3603170dfd7659562133aeb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                }
+            }
+        },
+        "/orders/{id}/status": {
+            "put": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Cập nhật trạng thái đơn hàng",
+                "operationId": "6e719ded36f036d0738a48b5b4c42fc6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "example": "shipping"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            }
+        },
         "/register": {
             "post": {
                 "tags": [
@@ -729,6 +900,10 @@
         {
             "name": "Categories",
             "description": "Quản lý danh mục"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
         },
         {
             "name": "Món Ăn (Products)",
