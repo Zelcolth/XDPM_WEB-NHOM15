@@ -9,6 +9,7 @@ import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
 import logoImg from '../assets/Ir5Tc.png';
 import FoodCard from '../components/FoodCard';
+import { addToCart } from '../utils/cartStorage';
 
 export default function Home() {
   const [showMenu, setShowMenu] = useState(false);
@@ -118,10 +119,17 @@ export default function Home() {
   };
 
   const addToCartQuick = (item, categoryId) => {
-    // Minimal quick-add helper: integrate with cart later
     try {
-      console.log('Quick add to cart:', item?.id ?? item);
-      // future: dispatch to cart context / API
+      addToCart(
+        {
+          id: item?.id,
+          name: item?.name,
+          price: item?.price,
+          image: buildImageUrl(item?.image),
+          description: item?.description,
+        },
+        1
+      );
     } catch (e) {
       console.error(e);
     }
@@ -380,7 +388,7 @@ export default function Home() {
       </section>
 
       {/* ===== ABOUT ===== */}
-      <section ref={aboutRef} className="py-16 px-6 bg-white">
+      <section id="home-about" ref={aboutRef} className="py-16 px-6 bg-white">
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">Giới Thiệu</h2>
 
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 items-center">
@@ -451,7 +459,7 @@ export default function Home() {
       </section>
 
       {/* ===== MENU ===== */}
-      <section ref={menuRef} className="py-16 px-6 bg-[#f4efe9]">
+      <section id="home-menu" ref={menuRef} className="py-16 px-6 bg-[#f4efe9]">
         <h2 className="text-3xl font-bold text-center mb-10 text-orange-500">
           Thực đơn
         </h2>

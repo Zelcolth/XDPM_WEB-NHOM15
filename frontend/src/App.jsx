@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import OrderItem from './pages/OrderItem';
 import Checkout from './pages/Checkout';
+import OrderSuccess from './pages/OrderSuccess';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Account from './pages/Account';
@@ -15,6 +16,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/order-success/:id" element={<OrderSuccess />} />
         <Route path="/order" element={<OrderItem />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/account" element={<Account />} />

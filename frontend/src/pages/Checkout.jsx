@@ -1,47 +1,173 @@
 import React, { useState } from 'react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axiosClient, { setAuthToken } from '../api/axiosClient';
 import phoImg from '../assets/Phol.png';
 import banhmiImg from '../assets/banhmi.png';
 import sushiImg from '../assets/sushi.png';
+import Toast from '../components/Toast';
+import MainHeader from '../components/MainHeader';
+import { CART_STORAGE_KEY, clearCart, getCartItems } from '../utils/cartStorage';
 
 export default function Checkout() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     email: '',
     address: '',
   });
+  const [cartItems, setCartItems] = useState(() => getCartItems());
+  const [paymentMethod, setPaymentMethod] = useState('momo');
+  const [saveCustomerInfo, setSaveCustomerInfo] = useState(true);
+  const [placingOrder, setPlacingOrder] = useState(false);
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
-  const cartItems = [
-    { id: 1, name: 'Phở Bò Kobe', price: 24.00, qty: 1, img: phoImg },
-    { id: 2, name: 'Bánh Mì Đặc Biệt', price: 12.50, qty: 2, img: banhmiImg },
-  ];
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === CART_STORAGE_KEY) {
+        setCartItems(getCartItems());
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const loadProfile = async () => {
+      try {
+        setAuthToken(token);
+        const res = await axiosClient.get('/user');
+        const user = res.data || {};
+        if (!mounted) return;
+
+        setFormData((prev) => ({
+          ...prev,
+          fullName: user.name || prev.fullName,
+          phone: user.phone || prev.phone,
+          email: user.email || prev.email,
+          address: user.address || prev.address,
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    loadProfile();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const formatMoney = (value) =>
+    new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const shipping = 2.50;
-  const tax = (subtotal * 0.1).toFixed(2);
-  const total = (parseFloat(subtotal) + shipping + parseFloat(tax)).toFixed(2);
+  const tax = subtotal * 0.1;
+  const total = subtotal + shipping + tax;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const fallbackImages = [phoImg, banhmiImg, sushiImg];
+  const normalizeCartImage = (item, idx) => item?.img || fallbackImages[idx % fallbackImages.length];
+
+  const handlePlaceOrder = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setToast({ visible: true, message: 'Vui lòng đăng nhập để đặt hàng', type: 'error' });
+      navigate('/auth?mode=login');
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      setToast({ visible: true, message: 'Giỏ hàng đang trống', type: 'error' });
+      return;
+    }
+
+    if (!formData.fullName.trim() || !formData.phone.trim() || !formData.address.trim()) {
+      setToast({ visible: true, message: 'Vui lòng nhập đầy đủ thông tin nhận hàng', type: 'error' });
+      return;
+    }
+
+    const payload = {
+      address: formData.address.trim(),
+      phone: formData.phone.trim(),
+      note: `Nguoi nhan: ${formData.fullName.trim()}${formData.email ? ` | Email: ${formData.email.trim()}` : ''} | Thanh toan: ${paymentMethod}`,
+      items: cartItems.map((item) => ({
+        product_id: Number(item.product_id || item.id),
+        quantity: Number(item.qty || 1),
+      })),
+    };
+
+    try {
+      setPlacingOrder(true);
+      setAuthToken(token);
+
+      if (saveCustomerInfo) {
+        try {
+          await axiosClient.put('/user', {
+            name: formData.fullName.trim(),
+            phone: formData.phone.trim(),
+            address: formData.address.trim(),
+          });
+        } catch (profileErr) {
+          // Keep checkout flow running even when profile update fails.
+          console.error('Save customer info failed', profileErr);
+        }
+      }
+
+      const orderRes = await axiosClient.post('/orders', payload);
+      const order = orderRes.data?.data;
+
+      if (paymentMethod === 'momo' && order?.id) {
+        try {
+          await axiosClient.post(`/orders/${order.id}/pay`);
+        } catch (payErr) {
+          console.error(payErr);
+        }
+      }
+
+      clearCart();
+      setCartItems([]);
+      if (order?.id) {
+        navigate(`/order-success/${order.id}`, {
+          state: {
+            order,
+            paymentMethod,
+          },
+        });
+      } else {
+        setToast({ visible: true, message: 'Đặt hàng thành công', type: 'success' });
+        navigate('/account');
+      }
+    } catch (err) {
+      const serverMessage = err.response?.data?.message;
+      if (err.response?.status === 422) {
+        setToast({ visible: true, message: serverMessage || 'Thông tin đơn hàng chưa hợp lệ', type: 'error' });
+      } else {
+        setToast({ visible: true, message: serverMessage || 'Không thể đặt đơn lúc này', type: 'error' });
+      }
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
   return (
     <div className="bg-[#FDF7F2] min-h-screen font-sans text-gray-800">
-      {/* Header */}
-      <header className="flex justify-between items-center py-6 px-10 bg-white shadow-sm">
-        <div className="text-2xl font-bold text-orange-500 italic">VèoFood</div>
-        <nav className="hidden md:flex space-x-8 font-medium text-sm">
-          <a href="/" className="text-gray-500 hover:text-orange-500">Trang chủ</a>
-          <a href="#" className="text-gray-500 hover:text-orange-500">Khám phá</a>
-          <a href="#" className="text-orange-500 border-b-2 border-orange-500 pb-1">Thanh toán</a>
-          <a href="#" className="text-gray-500 hover:text-orange-500">Tài khoản</a>
-        </nav>
-        <div className="flex space-x-4 text-orange-500">
-          <button><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg></button>
-          <button><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg></button>
-        </div>
-      </header>
+      <MainHeader active="checkout" />
 
       <main className="container mx-auto px-4 py-8 flex flex-col lg:flex-row gap-8">
         {/* Form Thanh Toán */}
@@ -80,17 +206,7 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-bold mb-2">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="Địa chỉ email của bạn"
-                className="w-full px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:border-orange-500"
-              />
-            </div>
+ 
 
             <div className="mb-4">
               <label className="block text-sm font-bold mb-2">Địa chỉ giao hàng</label>
@@ -103,6 +219,16 @@ export default function Checkout() {
                 className="w-full px-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:border-orange-500"
               />
             </div>
+
+            <label className="flex items-center gap-2 text-sm text-gray-600 select-none">
+              <input
+                type="checkbox"
+                checked={saveCustomerInfo}
+                onChange={(e) => setSaveCustomerInfo(e.target.checked)}
+                className="w-4 h-4 accent-orange-500"
+              />
+              Lưu thông tin khách hàng cho lần đặt sau
+            </label>
 
 
           </div>
@@ -117,15 +243,15 @@ export default function Checkout() {
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center justify-between pb-4 border-b">
                   <div className="flex items-center gap-4">
-                    <img src={item.img} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
+                    <img src={normalizeCartImage(item, item.id)} alt={item.name} className="w-16 h-16 rounded-lg object-cover" />
                     <div>
                       <h4 className="font-bold mb-1">{item.name}</h4>
-                      <p className="text-sm text-gray-500">Thanh chế định các đặc độ tố Wagyu</p>
+                      <p className="text-sm text-gray-500">{item.note || 'Yêu cầu đặc biệt sẽ được ghi chú khi xác nhận đơn'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">${(item.price * item.qty).toFixed(2)}</p>
-                    <p className="text-sm text-gray-500">{item.qty} x ${item.price.toFixed(2)}</p>
+                    <p className="font-bold">{formatMoney(item.price * item.qty)}</p>
+                    <p className="text-sm text-gray-500">{item.qty} x {formatMoney(item.price)}</p>
                   </div>
                 </div>
               ))}
@@ -141,21 +267,21 @@ export default function Checkout() {
             <div className="space-y-4 mb-6 pb-6 border-b border-dashed">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Tạm tính</span>
-                <span className="font-bold">${subtotal.toFixed(2)}</span>
+                <span className="font-bold">{formatMoney(subtotal)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Phí giao hàng</span>
-                <span className="font-bold">${shipping.toFixed(2)}</span>
+                <span className="font-bold">{formatMoney(shipping)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Thuế (VAT)</span>
-                <span className="font-bold">${tax}</span>
+                <span className="font-bold">{formatMoney(tax)}</span>
               </div>
             </div>
 
             <div className="flex justify-between items-center mb-6 pb-6 border-b border-dashed">
               <span className="font-bold text-lg">Tổng số tiền</span>
-              <span className="text-2xl font-bold text-orange-500">${total}</span>
+              <span className="text-2xl font-bold text-orange-500">{formatMoney(total)}</span>
             </div>
 
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
@@ -164,8 +290,12 @@ export default function Checkout() {
               <a href="#" className="text-orange-500 hover:underline">The Kinetic Gourmet</a>
             </p>
 
-            <button className="w-full bg-orange-500 text-white py-4 rounded-full font-bold hover:bg-orange-600 transition mb-4">
-              ĐẶT HÀNG NGAY →
+            <button
+              disabled={placingOrder || cartItems.length === 0}
+              onClick={handlePlaceOrder}
+              className="w-full bg-orange-500 text-white py-4 rounded-full font-bold hover:bg-orange-600 transition mb-4 disabled:opacity-70"
+            >
+              {placingOrder ? 'ĐANG XỬ LÝ...' : 'ĐẶT HÀNG NGAY →'}
             </button>
 
             {/* Phương thức thanh toán */}
@@ -175,21 +305,29 @@ export default function Checkout() {
               </h3>
 
               <div className="space-y-3">
-                <div className="flex items-center p-3 rounded-full border-2 border-orange-500 bg-orange-50">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('momo')}
+                  className={`w-full flex items-center p-3 rounded-full ${paymentMethod === 'momo' ? 'border-2 border-orange-500 bg-orange-50' : 'border border-gray-200'}`}
+                >
                   <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mr-3">
                     V
                   </div>
                   <span className="font-bold">Vi MoMo</span>
                   <span className="text-xs text-gray-500 ml-2">Ví điện tử được sử dụng phổ biến</span>
-                </div>
+                </button>
 
-                <div className="flex items-center p-3 rounded-full border border-gray-200">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`w-full flex items-center p-3 rounded-full ${paymentMethod === 'cash' ? 'border-2 border-orange-500 bg-orange-50' : 'border border-gray-200'}`}
+                >
                   <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M3 14h18m-9-4v8m-7 0a2 2 0 11-4 0 2 2 0 014 0z"></path>
                   </svg>
                   <span className="font-bold">Tiền mặt</span>
                   <span className="text-xs text-gray-500 ml-2">Thanh toán khi nhận hàng</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -231,6 +369,13 @@ export default function Checkout() {
           © 2024 VèoFood. Tất cả quyền được bảo lưu.
         </div>
       </footer>
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+        duration={3000}
+      />
     </div>
   );
 }
