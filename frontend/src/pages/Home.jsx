@@ -29,7 +29,21 @@ export default function Home() {
     if (token) {
       setAuthToken(token);
       setIsLoggedIn(true);
+    } else {
+      setIsLoggedIn(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'token') {
+        setAuthToken(e.newValue);
+        setIsLoggedIn(Boolean(e.newValue));
+      }
+    };
+
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
   }, []);
 
   const logout = async () => {
@@ -41,6 +55,7 @@ export default function Home() {
       localStorage.removeItem("token");
       setAuthToken(null);
       setIsLoggedIn(false);
+      setShowMenu(false);
       navigate("/");
     }
   };
@@ -66,8 +81,8 @@ export default function Home() {
       image: gt2,
       title: 'Chào Mừng Đến VèoFood',
       desc: 'Trải nghiệm ẩm thực Việt Nam đích thực',
-      cta: 'Đăng Nhập Ngay',
-      onClick: () => navigate('/auth?mode=login'),
+      cta: isLoggedIn ? 'Xem Đơn Hàng' : 'Đăng Nhập Ngay',
+      onClick: () => navigate(isLoggedIn ? '/order' : '/auth?mode=login'),
     },
   ];
 

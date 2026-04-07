@@ -33,7 +33,20 @@ class OrderController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
-        $orders = $query->get();
+        $orders = $query->latest()->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $orders
+        ]);
+    }
+
+    public function myOrders(Request $request)
+    {
+        $orders = Order::with('items.product')
+            ->where('user_id', $request->user()->id)
+            ->latest()
+            ->get();
 
         return response()->json([
             'status' => 'success',

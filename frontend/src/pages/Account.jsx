@@ -32,6 +32,7 @@ export default function Account() {
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const [userData, setUserData] = useState({
     name: '',
@@ -49,9 +50,23 @@ export default function Account() {
     try {
       setOrdersLoading(true);
       setOrdersError('');
-      const res = await axiosClient.get('/orders');
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setOrders([]);
+        setOrdersError('Bạn cần đăng nhập để xem đơn hàng.');
+        return;
+      }
+
+      setAuthToken(token);
+
+      const res = await axiosClient.get('/my-orders');
       const data = res.data?.data ?? res.data ?? [];
-      setOrders(Array.isArray(data) ? data : []);
+      const normalizedOrders = Array.isArray(data)
+        ? data
+          .filter((order) => currentUserId == null || Number(order?.user_id) === Number(currentUserId))
+          .sort((a, b) => new Date(b?.created_at || 0) - new Date(a?.created_at || 0))
+        : [];
+      setOrders(normalizedOrders);
     } catch (err) {
       console.error('Fetch orders error', err);
       setOrdersError('Không thể tải lịch sử đơn hàng.');
@@ -74,6 +89,7 @@ export default function Account() {
 
         const res = await axiosClient.get("/user");
         const user = res.data;
+        setCurrentUserId(user.id ?? null);
 
         setUserData({
           name: user.name,
@@ -324,8 +340,6 @@ export default function Account() {
               ) : (
                 <div className="space-y-4">
                   {orders
-                    .slice()
-                    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
                     .map((order) => {
                       const itemCount = (order?.items || []).reduce(
                         (sum, item) => sum + Number(item?.quantity || 0),
@@ -360,6 +374,12 @@ export default function Account() {
                                 {item?.product?.name || `Món #${item.product_id}`} x {item.quantity}
                               </span>
                             ))}
+                          </div>
+
+                          <div className="mt-3 grid gap-2 text-sm text-gray-600">
+                            <div>Số điện thoại: {order.phone || '--'}</div>
+                            <div>Địa chỉ giao hàng: {order.address || '--'}</div>
+                            {order.note ? <div>Ghi chú: {order.note}</div> : null}
                           </div>
 
                           <button
