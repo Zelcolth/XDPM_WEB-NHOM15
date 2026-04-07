@@ -9,6 +9,7 @@ import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
 import logoImg from '../assets/Ir5Tc.png';
 import FoodCard from '../components/FoodCard';
+import Toast from '../components/Toast';
 import { addToCart } from '../utils/cartStorage';
 
 export default function Home() {
@@ -113,6 +114,7 @@ export default function Home() {
   const [categoryProducts, setCategoryProducts] = useState({});
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [productsError, setProductsError] = useState('');
+  const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
   // Trang hiện tại cho mỗi category (0-based)
   const [currentPage, setCurrentPage] = useState({});
@@ -145,8 +147,18 @@ export default function Home() {
         },
         1
       );
+      setToast({
+        visible: true,
+        message: `Đã thêm ${item?.name || 'món ăn'} vào giỏ hàng`,
+        type: 'success',
+      });
     } catch (e) {
       console.error(e);
+      setToast({
+        visible: true,
+        message: 'Không thể thêm món vào giỏ hàng.',
+        type: 'error',
+      });
     }
   };
 
@@ -579,6 +591,14 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      <Toast
+        visible={toast.visible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, visible: false }))}
+        duration={2200}
+      />
 
     </div>
   );
