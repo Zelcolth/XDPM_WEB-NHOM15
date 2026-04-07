@@ -2,6 +2,29 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import Toast from '../components/Toast';
+import MainHeader from '../components/MainHeader';
+
+const formatMoney = (value) =>
+  new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '--';
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return '--';
+  return d.toLocaleString('vi-VN');
+};
+
+const mapOrderStatus = (status) => {
+  const key = String(status || '').toLowerCase();
+  if (key === 'pending' || key === 'paid' || key === 'shipping') return 'Đang giao hàng';
+  if (key === 'completed') return 'Đã giao hàng';
+  if (key === 'cancelled') return 'Đã hủy';
+  return status || 'Không xác định';
+};
 
 export default function Account() {
   const navigate = useNavigate();
@@ -16,8 +39,26 @@ export default function Account() {
     phone: '',
     address: ''
   });
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersError, setOrdersError] = useState('');
 
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
+
+  const fetchOrders = async () => {
+    try {
+      setOrdersLoading(true);
+      setOrdersError('');
+      const res = await axiosClient.get('/orders');
+      const data = res.data?.data ?? res.data ?? [];
+      setOrders(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Fetch orders error', err);
+      setOrdersError('Không thể tải lịch sử đơn hàng.');
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,6 +82,8 @@ export default function Account() {
           address: user.address || ''
         });
 
+        await fetchOrders();
+
       } catch (err) {
         localStorage.removeItem("token");
         navigate("/auth");
@@ -51,6 +94,12 @@ export default function Account() {
 
     fetchUser();
   }, [navigate]);
+
+  useEffect(() => {
+    if (activeTab === 'orders' && orders.length === 0 && !ordersLoading && !ordersError) {
+      fetchOrders();
+    }
+  }, [activeTab, orders.length, ordersLoading, ordersError]);
 
   const handleLogout = () => {
     (async () => {
@@ -118,66 +167,7 @@ export default function Account() {
   return (
     <div className="bg-[#FDF7F2] min-h-screen">
 
-      {/* HEADER */}
-      <header className="flex items-center justify-between px-10 py-4 bg-white shadow-sm">
-
-  {/* LOGO */}
-  <div
-    className="text-xl font-bold text-orange-500 cursor-pointer"
-    onClick={() => navigate('/')}
-  >
-    🍴 VèoFood
-  </div>
-
-  {/* NAVBAR */}
-  <nav className="flex gap-6 text-sm font-medium">
-
-    <span
-      onClick={() => {
-        navigate('/');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }}
-      className="cursor-pointer hover:text-orange-500"
-    >
-      Trang Chủ
-    </span>
-
-    
-
-    
-
-    {/* 🔥 HIỂN THỊ KHI CÓ TOKEN */}
-    <span
-      onClick={() => navigate('/account')}
-      className="text-orange-500 cursor-pointer"
-    >
-      Tài Khoản
-    </span>
-
-  </nav>
-
-  {/* RIGHT SIDE */}
-  <div className="flex items-center gap-3">
-
-    {localStorage.getItem("token") ? (
-      <button
-        onClick={handleLogout}
-        className="text-sm px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
-      >
-        Đăng xuất
-      </button>
-    ) : (
-      <button
-        onClick={() => navigate('/auth')}
-        className="text-sm px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition"
-      >
-        Đăng nhập
-      </button>
-    )}
-
-  </div>
-
-</header>
+      <MainHeader active="account" />
 
       {/* MAIN */}
       <main className="max-w-6xl mx-auto py-10 px-4 flex gap-8">
@@ -305,18 +295,85 @@ export default function Account() {
               </div>
             </>
           ) : (
-            <div className="text-center py-16">
-              <div className="text-5xl mb-4">🛒</div>
-              <h3 className="text-lg font-semibold text-gray-700">
-                Bạn chưa có đơn hàng nào
-              </h3>
-              <button
-                onClick={() => navigate('/menu')}
-                className="mt-4 text-orange-500 font-bold hover:underline"
-              >
-                Đặt món ngay
-              </button>
-            </div>
+            <>
+              <div className="flex justify-between items-center mb-8 border-b pb-4">
+                <h2 className="text-xl font-bold text-gray-800">Đơn hàng của tôi</h2>
+                <button
+                  onClick={fetchOrders}
+                  className="text-orange-500 font-medium hover:underline"
+                >
+                  Làm mới
+                </button>
+              </div>
+
+              {ordersLoading ? (
+                <div className="text-gray-500 py-10">Đang tải lịch sử đơn hàng...</div>
+              ) : ordersError ? (
+                <div className="text-red-500 py-10">{ordersError}</div>
+              ) : orders.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-5xl mb-4">🛒</div>
+                  <h3 className="text-lg font-semibold text-gray-700">Bạn chưa có đơn hàng nào</h3>
+                  <button
+                    onClick={() => navigate('/order')}
+                    className="mt-4 text-orange-500 font-bold hover:underline"
+                  >
+                    Đặt món ngay
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {orders
+                    .slice()
+                    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+                    .map((order) => {
+                      const itemCount = (order?.items || []).reduce(
+                        (sum, item) => sum + Number(item?.quantity || 0),
+                        0
+                      );
+
+                      return (
+                        <div key={order.id} className="border rounded-xl p-4 bg-gray-50">
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                            <div>
+                              <div className="font-bold text-gray-800">Đơn #{order.id}</div>
+                              <div className="text-sm text-gray-500 mt-1">
+                                {formatDateTime(order.created_at)} · {itemCount} món
+                              </div>
+                            </div>
+                            <div className="text-left md:text-right">
+                              <div className="font-semibold text-orange-600">
+                                {formatMoney(order.total_price)}
+                              </div>
+                              <div className="text-sm text-gray-600 mt-1">
+                                {mapOrderStatus(order.status)}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {(order?.items || []).slice(0, 3).map((item) => (
+                              <span
+                                key={item.id}
+                                className="text-xs bg-white border rounded-full px-3 py-1 text-gray-600"
+                              >
+                                {item?.product?.name || `Món #${item.product_id}`} x {item.quantity}
+                              </span>
+                            ))}
+                          </div>
+
+                          <button
+                            onClick={() => navigate(`/order-success/${order.id}`, { state: { order } })}
+                            className="mt-4 text-sm font-semibold text-orange-500 hover:underline"
+                          >
+                            Xem chi tiết đơn hàng
+                          </button>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </>
           )}
 
         </section>
