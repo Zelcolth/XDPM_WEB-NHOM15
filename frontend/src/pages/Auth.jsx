@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axiosClient, { setAuthToken } from "../api/axiosClient";
 import Toast from "../components/Toast";
@@ -207,57 +207,122 @@ export default function Auth() {
               </button>
             </div>
 
-            <div className="space-y-4">
-              {!isLogin && (
-                <div>
-                  <input
-                    value={name}
-                    onChange={updateField(setName, "name")}
-                    type="text"
-                    placeholder="Họ và tên"
-                    className={inputClassName("name")}
-                  />
-                </div>
-              )}
-
-              <div>
-                <input
-                  value={email}
-                  onChange={updateField(setEmail, "email")}
-                  type="email"
-                  placeholder="Email"
-                  className={inputClassName("email")}
-                />
-              </div>
-
-              <div>
-                <input
-                  value={password}
-                  onChange={updateField(setPassword, "password")}
-                  type="password"
-                  placeholder="Mật khẩu"
-                  className={inputClassName("password")}
-                />
-              </div>
-
-              {!isLogin && (
-                <div>
-                  <input
-                    value={passwordConfirm}
-                    onChange={updateField(setPasswordConfirm, "passwordConfirm")}
-                    type="password"
-                    placeholder="Xác nhận mật khẩu"
-                    className={inputClassName("passwordConfirm")}
-                  />
-                </div>
-              )}
-
-              <button
-                onClick={isLogin ? handleLogin : handleRegister}
-                className="w-full rounded-2xl bg-orange-500 px-4 py-3 font-semibold text-white transition hover:bg-orange-600"
+            <div className="relative w-full overflow-hidden">
+              <div
+                className="flex"
+                style={{
+                  width: "200%",
+                  transform: isLogin ? "translateX(0%)" : "translateX(-50%)",
+                  transition: "transform 320ms ease-in-out",
+                  willChange: "transform",
+                }}
               >
-                {isLogin ? "ĐĂNG NHẬP" : "ĐĂNG KÝ"}
-              </button>
+                {/* Login panel */}
+                <div className="w-1/2 pr-4" style={{ flex: "0 0 50%", pointerEvents: isLogin ? "auto" : "none" }} aria-hidden={!isLogin}>
+                  <div className="space-y-4">
+                    {message && (
+                      <div
+                        className={`w-full p-3 rounded ${messageType === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
+                      >
+                        {message}
+                      </div>
+                    )}
+
+                    <div>
+                      <input
+                        value={email}
+                        onChange={updateField(setEmail, "email")}
+                        type="email"
+                        placeholder="Email"
+                        className={inputClassName("email")}
+                      />
+                      {errors.email && <div className="text-sm text-red-500">{errors.email}</div>}
+                    </div>
+
+                    <div>
+                      <input
+                        value={password}
+                        onChange={updateField(setPassword, "password")}
+                        type="password"
+                        placeholder="Mật khẩu"
+                        className={inputClassName("password")}
+                      />
+                      {errors.password && <div className="text-sm text-red-500">{errors.password}</div>}
+                    </div>
+
+                    <button
+                      onClick={handleLogin}
+                      className="w-full rounded-2xl bg-orange-500 px-4 py-3 font-semibold text-white transition hover:bg-orange-600"
+                    >
+                      ĐĂNG NHẬP
+                    </button>
+                  </div>
+                </div>
+
+                {/* Register panel */}
+                <div className="w-1/2 pl-4" style={{ flex: "0 0 50%", pointerEvents: isLogin ? "none" : "auto" }} aria-hidden={isLogin}>
+                  <div className="space-y-4">
+                    {message && (
+                      <div
+                        className={`w-full p-3 rounded ${messageType === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
+                      >
+                        {message}
+                      </div>
+                    )}
+
+                    <div>
+                      <input
+                        value={name}
+                        onChange={updateField(setName, "name")}
+                        type="text"
+                        placeholder="Họ và tên"
+                        className={inputClassName("name")}
+                      />
+                      {errors.name && <div className="text-sm text-red-500">{errors.name}</div>}
+                    </div>
+
+                    <div>
+                      <input
+                        value={email}
+                        onChange={updateField(setEmail, "email")}
+                        type="email"
+                        placeholder="Email"
+                        className={inputClassName("email")}
+                      />
+                      {errors.email && <div className="text-sm text-red-500">{errors.email}</div>}
+                    </div>
+
+                    <div>
+                      <input
+                        value={password}
+                        onChange={updateField(setPassword, "password")}
+                        type="password"
+                        placeholder="Mật khẩu"
+                        className={inputClassName("password")}
+                      />
+                      {errors.password && <div className="text-sm text-red-500">{errors.password}</div>}
+                    </div>
+
+                    <div>
+                      <input
+                        value={passwordConfirm}
+                        onChange={updateField(setPasswordConfirm, "passwordConfirm")}
+                        type="password"
+                        placeholder="Xác nhận mật khẩu"
+                        className={inputClassName("passwordConfirm")}
+                      />
+                      {errors.passwordConfirm && <div className="text-sm text-red-500">{errors.passwordConfirm}</div>}
+                    </div>
+
+                    <button
+                      onClick={handleRegister}
+                      className="w-full rounded-2xl bg-orange-500 px-4 py-3 font-semibold text-white transition hover:bg-orange-600"
+                    >
+                      ĐĂNG KÝ
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
