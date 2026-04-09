@@ -4,6 +4,7 @@ import axiosClient from '../api/axiosClient';
 import heroImg from '../assets/hero.png';
 import Toast from '../components/Toast';
 import MainHeader from '../components/MainHeader';
+import MainFooter from '../components/MainFooter';
 import {
   addToCart,
   CART_STORAGE_KEY,
@@ -378,37 +379,7 @@ export default function OrderItem() {
 
       </main>
 
-      <footer className="bg-white rounded-t-[3rem] mt-12 py-12 px-4 md:px-10">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Vèo Food</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">Tinh hoa ẩm thực được giao tận nơi với độ chính xác tuyệt đối. Nâng tầm trải nghiệm ăn uống mỗi ngày của bạn.</p>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4">NỀN TẢNG</h4>
-            <ul className="text-sm text-gray-500 space-y-2">
-              <li><a href="#" className="hover:text-orange-500">Về đầu bếp của chúng tôi</a></li>
-              <li><a href="#" className="hover:text-orange-500">Sự bền vững</a></li>
-              <li><a href="#" className="hover:text-orange-500">Đối tác</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4">HỖ TRỢ</h4>
-            <ul className="text-sm text-gray-500 space-y-2">
-              <li><a href="#" className="hover:text-orange-500">Chính sách bảo mật</a></li>
-              <li><a href="#" className="hover:text-orange-500">Điều khoản dịch vụ</a></li>
-              <li><a href="#" className="hover:text-orange-500">Liên hệ</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4 text-right">NHẬN TIN</h4>
-            <div className="flex bg-[#FDF7F2] rounded-full p-1">
-              <input type="email" placeholder="Email của bạn" className="bg-transparent pl-4 outline-none text-sm w-full" />
-              <button className="bg-[#8C592B] text-white px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap">Đăng ký</button>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <MainFooter />
       <Toast
         visible={toast.visible}
         message={toast.message}

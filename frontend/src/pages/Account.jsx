@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import Toast from '../components/Toast';
 import MainHeader from '../components/MainHeader';
+import MainFooter from '../components/MainFooter';
 
 const formatMoney = (value) =>
   new Intl.NumberFormat('vi-VN', {
@@ -381,6 +382,7 @@ export default function Account() {
         </section>
 
       </main>
+      <MainFooter />
       <Toast
         visible={toast.visible}
         message={toast.message}

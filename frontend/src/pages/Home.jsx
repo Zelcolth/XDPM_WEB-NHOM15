@@ -9,6 +9,7 @@ import gt2 from '../assets/GioiThieu/2.jpg';
 import gt3 from '../assets/GioiThieu/3.jpg';
 import logoImg from '../assets/Ir5Tc.png';
 import FoodCard from '../components/FoodCard';
+import MainFooter from '../components/MainFooter';
 import Toast from '../components/Toast';
 import { addToCart, CART_STORAGE_KEY, getCartItems, getCartTotal } from '../utils/cartStorage';
 
@@ -90,7 +91,7 @@ export default function Home() {
     {
       image: phoImg,
       title: 'Món Ăn Đặc Sắc',
-      desc: 'Hướng vị truyền thống, chất lượng đảm bảo',
+      desc: 'Hương vị truyền thống, chất lượng đảm bảo',
       cta: 'Xem Thực Đơn',
       onClick: () => scrollToSection(menuRef),
     },
@@ -331,7 +332,7 @@ export default function Home() {
       {/* ===== NAVBAR ===== */}
       <header className="flex justify-between items-center px-6 md:px-10 py-4 bg-white/95 backdrop-blur shadow sticky top-0 z-50">
         <div className="flex items-center">
-          <img src={logoImg} alt="VÃ¨oFood" className="h-14 md:h-11 w-auto object-contain" />
+          <img src={logoImg} alt="VèoFood" className="h-14 md:h-11 w-auto object-contain" />
         </div>
 
         <nav className="flex gap-6 text-sm font-medium">
@@ -346,11 +347,11 @@ export default function Home() {
           </span>
 
           <span onClick={() => scrollToSection(aboutRef)} className="cursor-pointer hover:text-orange-500">
-            Giới thiệu
+            Giới Thiệu
           </span>
 
           <span onClick={() => scrollToSection(menuRef)} className="cursor-pointer hover:text-orange-500">
-            Thực đơn
+            Thực Đơn
           </span>
         </nav>
 
@@ -428,7 +429,7 @@ export default function Home() {
                         onClick={() => navigate('/order')}
                         className="w-full mt-3 bg-orange-500 text-white py-2.5 rounded-xl font-semibold hover:bg-orange-600"
                       >
-                         đi tới trang đặt món
+                         Đi tới trang đặt món
                       </button>
                     </div>
                   </div>
@@ -550,7 +551,7 @@ export default function Home() {
             <h3 className="text-2xl font-bold text-gray-800">Câu Chuyện Của Chúng Tôi</h3>
 
             <p className="text-gray-600 leading-relaxed">
-              Nhà hàng của chúng tôi tự hào phục vụ các món ăn Việt Nam truyền thống với hương vị đậm đà, chất lượng. Với không gian âm nhạc và đội ngũ nhân viên nhiệt tình, chúng tôi cam kết mang đến cho quý khách những trải nghiệm ẩm thực tuyệt vời nhất.
+              Nhà hàng của chúng tôi tự hào phục vụ các món ăn Việt Nam truyền thống với hương vị đậm đà, chất lượng. Với không gian ấm cúng và đội ngũ nhân viên nhiệt tình, chúng tôi cam kết mang đến cho quý khách những trải nghiệm ẩm thực tuyệt vời nhất.
             </p>
 
             <div className="grid grid-cols-2 gap-4">
@@ -651,41 +652,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== FOOTER ===== */}
-      <footer className="bg-[#111827] mt-12 py-12 px-4 md:px-10 text-slate-200">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-1">
-            <h3 className="text-xl font-bold text-white mb-4">VèoFood</h3>
-            <p className="text-sm text-slate-300 leading-relaxed">
-              Tinh hoa ẩm thực Viêt Nam với nguyên liệu tươi ngon và trải nghiệm đặt món tiện lợi.
-            </p>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-4 text-white">LIÊN KẾT</h4>
-            <ul className="text-sm text-slate-300 space-y-2">
-              <li><button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="hover:text-orange-300">Trang Chủ</button></li>
-              <li><button onClick={() => scrollToSection(aboutRef)} className="hover:text-orange-300">Giới Thiệu</button></li>
-              <li><button onClick={() => scrollToSection(menuRef)} className="hover:text-orange-300">Thực Đơn</button></li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-4 text-white">LIÊN HỆ</h4>
-            <ul className="text-sm text-slate-300 space-y-2">
-              <li>67 Trần Thị Nơi, P.4, Q.8, TP.HCM</li>
-              <li>024 1234 5678</li>
-              <li>info@veofood.com</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-4 text-white">GIỜ MỞ CỬA</h4>
-            <p className="text-sm text-slate-300">Thứ 2 - Chủ Nhật</p>
-            <p className="text-lg font-semibold text-orange-300">10:00 - 22:00</p>
-          </div>
-        </div>
-      </footer>
+      <MainFooter
+        onScrollTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onScrollAbout={() => scrollToSection(aboutRef)}
+        onScrollMenu={() => scrollToSection(menuRef)}
+      />
 
       <Toast
         visible={toast.visible}

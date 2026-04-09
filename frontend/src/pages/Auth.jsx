@@ -12,9 +12,8 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
   const [errors, setErrors] = useState({});
+  const [successToast, setSuccessToast] = useState({ visible: false, message: "" });
 
   useEffect(() => {
     const mode = new URLSearchParams(location.search).get("mode");
@@ -23,8 +22,6 @@ export default function Auth() {
 
   const switchMode = (nextIsLogin) => {
     setIsLogin(nextIsLogin);
-    setMessage("");
-    setMessageType("");
     setErrors({});
     navigate(nextIsLogin ? "/auth?mode=login" : "/auth?mode=register", { replace: true });
   };
@@ -40,10 +37,6 @@ export default function Auth() {
       });
     }
 
-    if (message) {
-      setMessage("");
-      setMessageType("");
-    }
   };
 
   const inputClassName = (field) =>
@@ -52,11 +45,6 @@ export default function Auth() {
         ? "border-red-300 bg-red-50/70 placeholder:text-red-300 focus:ring-2 focus:ring-red-200"
         : "border-slate-200 bg-slate-50 focus:border-orange-300 focus:ring-2 focus:ring-orange-200"
     }`;
-
-  const getFirstErrorMessage = (nextErrors, fallback) => {
-    const firstError = Object.values(nextErrors || {}).find(Boolean);
-    return firstError || fallback;
-  };
 
   const handleLogin = async () => {
     const clientErr = {};
@@ -70,8 +58,6 @@ export default function Auth() {
 
     if (Object.keys(clientErr).length) {
       setErrors(clientErr);
-      setMessage(getFirstErrorMessage(clientErr, "Vui lòng kiểm tra lại thông tin."));
-      setMessageType("error");
       return;
     }
 
@@ -84,32 +70,28 @@ export default function Auth() {
       setAuthToken(token);
 
       setErrors({});
-      setMessage("Đăng nhập thành công");
-      setMessageType("success");
+      setSuccessToast({ visible: true, message: "Đăng nhập thành công" });
 
       if (typeof role === "string" && role.toLowerCase() === "admin") {
-        navigate("/admin", { replace: true });
+        setTimeout(() => navigate("/admin", { replace: true }), 700);
       } else {
-        navigate("/", { replace: true });
+        setTimeout(() => navigate("/", { replace: true }), 700);
       }
     } catch (err) {
       const status = err.response?.status;
       setErrors({});
 
       if (status === 401) {
-        setMessage("Email hoặc mật khẩu không đúng.");
+        setErrors({ password: "Email hoặc mật khẩu không đúng." });
       } else if (status === 422 && err.response?.data?.errors) {
         const be = {};
         Object.entries(err.response.data.errors).forEach(([k, v]) => {
           be[k] = v.join(" ");
         });
         setErrors(be);
-        setMessage(getFirstErrorMessage(be, "Dữ liệu không hợp lệ."));
       } else {
-        setMessage("Có lỗi xảy ra, vui lòng thử lại.");
+        setErrors({ email: "Có lỗi xảy ra, vui lòng thử lại." });
       }
-
-      setMessageType("error");
     }
   };
 
@@ -129,8 +111,6 @@ export default function Auth() {
 
     if (Object.keys(clientErr).length) {
       setErrors(clientErr);
-      setMessage(getFirstErrorMessage(clientErr, "Vui lòng kiểm tra lại thông tin."));
-      setMessageType("error");
       return;
     }
 
@@ -147,10 +127,9 @@ export default function Auth() {
       setAuthToken(token);
 
       setErrors({});
-      setMessage("Đăng ký thành công");
-      setMessageType("success");
+      setSuccessToast({ visible: true, message: "Đăng ký thành công" });
 
-      navigate("/");
+      setTimeout(() => navigate("/"), 700);
     } catch (err) {
       const status = err.response?.status;
       setErrors({});
@@ -161,12 +140,9 @@ export default function Auth() {
           be[k] = v.join(" ");
         });
         setErrors(be);
-        setMessage(getFirstErrorMessage(be, "Dữ liệu không hợp lệ."));
       } else {
-        setMessage("Đăng ký thất bại.");
+        setErrors({ email: "Đăng ký thất bại." });
       }
-
-      setMessageType("error");
     }
   };
 
@@ -176,14 +152,11 @@ export default function Auth() {
     : "Điền thông tin để bắt đầu sử dụng VèoFood.";
 
   return (
-    <div className="min-h-screen bg-[#FDF7F2] px-4 py-10 md:px-6">
-      <div className="mx-auto grid min-h-[640px] w-full max-w-6xl overflow-hidden rounded-[36px] bg-white shadow-[0_25px_80px_rgba(148,102,60,0.18)] md:grid-cols-[1.08fr_0.92fr]">
+    <div className="min-h-screen bg-[#FDF7F2] px-4 py-6 md:px-6 md:py-8 flex items-center justify-center">
+      <div className="grid min-h-[640px] w-full max-w-6xl overflow-hidden rounded-[36px] bg-white shadow-[0_25px_80px_rgba(148,102,60,0.18)] md:grid-cols-[1.08fr_0.92fr]">
         <section className="flex items-center justify-center px-6 py-10 sm:px-10 md:px-12">
           <div className="w-full max-w-md">
             <div className="mb-8">
-              <div className="mb-3 inline-flex rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-orange-600">
-                VeoFood
-              </div>
               <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl">{authTitle}</h1>
               <p className="mt-3 text-sm leading-6 text-slate-500">{authDesc}</p>
             </div>
@@ -220,14 +193,6 @@ export default function Auth() {
                 {/* Login panel */}
                 <div className="w-1/2 pr-4" style={{ flex: "0 0 50%", pointerEvents: isLogin ? "auto" : "none" }} aria-hidden={!isLogin}>
                   <div className="space-y-4">
-                    {message && (
-                      <div
-                        className={`w-full p-3 rounded ${messageType === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
-                      >
-                        {message}
-                      </div>
-                    )}
-
                     <div>
                       <input
                         value={email}
@@ -262,14 +227,6 @@ export default function Auth() {
                 {/* Register panel */}
                 <div className="w-1/2 pl-4" style={{ flex: "0 0 50%", pointerEvents: isLogin ? "none" : "auto" }} aria-hidden={isLogin}>
                   <div className="space-y-4">
-                    {message && (
-                      <div
-                        className={`w-full p-3 rounded ${messageType === "error" ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}
-                      >
-                        {message}
-                      </div>
-                    )}
-
                     <div>
                       <input
                         value={name}
@@ -353,14 +310,11 @@ export default function Auth() {
         </aside>
       </div>
       <Toast
-        visible={Boolean(message) && messageType === "error"}
-        message={message}
-        type="error"
-        onClose={() => {
-          setMessage("");
-          setMessageType("");
-        }}
-        duration={2600}
+        visible={successToast.visible}
+        message={successToast.message}
+        type="success"
+        onClose={() => setSuccessToast({ visible: false, message: "" })}
+        duration={2200}
       />
     </div>
   );
