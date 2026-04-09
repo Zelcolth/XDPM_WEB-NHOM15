@@ -97,7 +97,7 @@ class ProductController extends Controller
      *             @OA\Property(property="price", type="number", example=30000),
      *             @OA\Property(property="category_id", type="integer", example=1),
      *             @OA\Property(property="description", type="string"),
-     *             @OA\Property(property="image", type="string")
+    *             @OA\Property(property="image", type="string", nullable=true, example=null)
      *         )
      *     ),
      *     @OA\Response(
@@ -161,7 +161,7 @@ class ProductController extends Controller
  *             @OA\Property(property="price", type="number"),
  *             @OA\Property(property="category_id", type="integer"),
  *             @OA\Property(property="description", type="string"),
- *             @OA\Property(property="image", type="string")
+ *             @OA\Property(property="image", type="string", nullable=true, example=null)
  *         )
  *     ),
  *     @OA\Response(response=200, description="Cập nhật thành công"),

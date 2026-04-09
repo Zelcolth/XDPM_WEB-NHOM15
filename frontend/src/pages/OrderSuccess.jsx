@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import MainHeader from '../components/MainHeader';
+import MainFooter from '../components/MainFooter';
 
 const formatMoney = (value) =>
   new Intl.NumberFormat('vi-VN', {
@@ -159,6 +160,7 @@ export default function OrderSuccess() {
           </button>
         </div>
       </div>
+      <MainFooter />
     </div>
   );
 }

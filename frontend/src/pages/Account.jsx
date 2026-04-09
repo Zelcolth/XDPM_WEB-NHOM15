@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import Toast from '../components/Toast';
 import MainHeader from '../components/MainHeader';
+import MainFooter from '../components/MainFooter';
 
 const formatMoney = (value) =>
   new Intl.NumberFormat('vi-VN', {
@@ -42,6 +43,7 @@ export default function Account() {
   const [orders, setOrders] = useState([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError] = useState('');
+  const [ordersFetched, setOrdersFetched] = useState(false);
 
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
 
@@ -52,6 +54,7 @@ export default function Account() {
       const res = await axiosClient.get('/orders');
       const data = res.data?.data ?? res.data ?? [];
       setOrders(Array.isArray(data) ? data : []);
+      setOrdersFetched(true);
     } catch (err) {
       console.error('Fetch orders error', err);
       setOrdersError('Không thể tải lịch sử đơn hàng.');
@@ -96,10 +99,10 @@ export default function Account() {
   }, [navigate]);
 
   useEffect(() => {
-    if (activeTab === 'orders' && orders.length === 0 && !ordersLoading && !ordersError) {
+    if (activeTab === 'orders' && !ordersFetched && !ordersLoading && !ordersError) {
       fetchOrders();
     }
-  }, [activeTab, orders.length, ordersLoading, ordersError]);
+  }, [activeTab, ordersFetched, ordersLoading, ordersError]);
 
   const handleLogout = () => {
     (async () => {
@@ -379,6 +382,7 @@ export default function Account() {
         </section>
 
       </main>
+      <MainFooter />
       <Toast
         visible={toast.visible}
         message={toast.message}

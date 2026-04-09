@@ -7,6 +7,7 @@ import banhmiImg from '../assets/banhmi.png';
 import sushiImg from '../assets/sushi.png';
 import Toast from '../components/Toast';
 import MainHeader from '../components/MainHeader';
+import MainFooter from '../components/MainFooter';
 import { CART_STORAGE_KEY, clearCart, getCartItems } from '../utils/cartStorage';
 
 export default function Checkout() {
@@ -287,7 +288,7 @@ export default function Checkout() {
             <p className="text-xs text-gray-500 mb-4 leading-relaxed">
               Bằng cách nhấp "Đặt hàng", bạn đại diện đồng ý với {' '}
               <a href="#" className="text-orange-500 hover:underline">điều khoản dịch vụ</a> của {' '}
-              <a href="#" className="text-orange-500 hover:underline">The Kinetic Gourmet</a>
+              <a href="#" className="text-orange-500 hover:underline">VèoFood</a>
             </p>
 
             <button
@@ -334,41 +335,7 @@ export default function Checkout() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white mt-12 py-12 px-4 md:px-10">
-        <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
-            <h3 className="font-bold mb-4">VèoFood</h3>
-            <p className="text-sm text-gray-500">Nền tảng giao thực phẩm cao cấp tại Việt Nam.</p>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4">Công ty</h4>
-            <ul className="text-sm text-gray-500 space-y-2">
-              <li><a href="#" className="hover:text-orange-500">Về chúng tôi</a></li>
-              <li><a href="#" className="hover:text-orange-500">Tuyển dụng</a></li>
-              <li><a href="#" className="hover:text-orange-500">Báo chí</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4">Hỗ trợ</h4>
-            <ul className="text-sm text-gray-500 space-y-2">
-              <li><a href="#" className="hover:text-orange-500">Trung tâm trợ giúp</a></li>
-              <li><a href="#" className="hover:text-orange-500">Liên hệ hỗ trợ</a></li>
-              <li><a href="#" className="hover:text-orange-500">Bảo mật</a></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-bold mb-4">Social</h4>
-            <div className="flex space-x-4 text-orange-500">
-              <a href="#" className="hover:text-orange-600">Instagram</a>
-              <a href="#" className="hover:text-orange-600">Facebook</a>
-            </div>
-          </div>
-        </div>
-        <div className="text-center text-xs text-gray-500 mt-8 pt-8 border-t">
-          © 2024 VèoFood. Tất cả quyền được bảo lưu.
-        </div>
-      </footer>
+      <MainFooter />
       <Toast
         visible={toast.visible}
         message={toast.message}
