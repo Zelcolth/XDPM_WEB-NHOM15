@@ -89,16 +89,16 @@ const LineChart = ({ title, data, color, unit }) => {
     <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
       <div className="flex items-start justify-between gap-3 mb-3">
         <h3 className="font-semibold text-slate-900">{title}</h3>
-        <p className="text-xs text-slate-500">{data.length} tháng gần nhất</p>
+        <p className="text-xs text-slate-500">{data.length} ngày gần nhất</p>
       </div>
 
       <div className="mb-3 flex items-center justify-between gap-3">
         <p className="text-sm text-slate-600">
-          Tháng hiện tại: <span className="font-semibold text-slate-900">{formatValue(currentValue)}</span>
+          Hôm nay: <span className="font-semibold text-slate-900">{formatValue(currentValue)}</span>
         </p>
         {changePercent !== null ? (
           <p className={`text-xs font-semibold ${changePercent >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(1)}% so với tháng trước
+            {changePercent >= 0 ? '+' : ''}{changePercent.toFixed(1)}% so với ngày trước
           </p>
         ) : (
           <p className="text-xs text-slate-500">Chưa đủ dữ liệu để so sánh</p>
@@ -167,7 +167,7 @@ const LineChart = ({ title, data, color, unit }) => {
           Mức cao nhất: <span className="font-semibold">{formatValue(rawMax)}</span>
         </p>
         <p className="text-right">
-          Điểm gần nhất:{' '}
+          Hôm nay:{' '}
           <span className="font-semibold">
             {formatValue(currentValue)}
           </span>
@@ -177,17 +177,29 @@ const LineChart = ({ title, data, color, unit }) => {
   );
 };
 
-const getOrderDate = (order) => {
-  const rawDate = order?.updated_at || order?.created_at;
+const getOrderPlacedDayKey = (order) => {
+  const rawDate = order?.created_at;
   if (!rawDate) return null;
 
-  const date = new Date(rawDate);
-  return Number.isNaN(date.getTime()) ? null : date;
+  const rawValue = String(rawDate);
+  const exactMatch = rawValue.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (exactMatch) return exactMatch[1];
+
+  const date = new Date(rawValue);
+  if (Number.isNaN(date.getTime())) return null;
+  return getDayKey(date);
 };
 
 const isDeliveredOrder = (order) => {
   const status = String(order?.status || '').toLowerCase();
   return status === 'completed' || status === 'delivered';
+};
+
+const getDayKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const getMonthKey = (date) => {
@@ -196,30 +208,29 @@ const getMonthKey = (date) => {
   return `${year}-${month}`;
 };
 
-const buildMonthlySeries = (orders = [], monthCount = 6) => {
-  const months = Array.from({ length: monthCount }, (_, index) => {
-    const monthDate = new Date();
-    monthDate.setDate(1);
-    monthDate.setHours(0, 0, 0, 0);
-    monthDate.setMonth(monthDate.getMonth() - (monthCount - 1 - index));
+const buildDailySeries = (orders = [], dayCount = 7) => {
+  const days = Array.from({ length: dayCount }, (_, index) => {
+    const dayDate = new Date();
+    dayDate.setHours(0, 0, 0, 0);
+    dayDate.setDate(dayDate.getDate() - (dayCount - 1 - index));
 
     return {
-      key: getMonthKey(monthDate),
-      label: monthDate.toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' }),
+      key: getDayKey(dayDate),
+      label: dayDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }),
       delivered: 0,
       revenue: 0,
     };
   });
 
-  const mapByMonth = Object.fromEntries(months.map((month) => [month.key, month]));
+  const mapByDay = Object.fromEntries(days.map((day) => [day.key, day]));
 
   orders.forEach((order) => {
     if (!isDeliveredOrder(order)) return;
 
-    const date = getOrderDate(order);
-    if (!date) return;
+    const placedDayKey = getOrderPlacedDayKey(order);
+    if (!placedDayKey) return;
 
-    const target = mapByMonth[getMonthKey(date)];
+    const target = mapByDay[placedDayKey];
     if (!target) return;
 
     target.delivered += 1;
@@ -228,15 +239,15 @@ const buildMonthlySeries = (orders = [], monthCount = 6) => {
   });
 
   return {
-    deliveredByMonth: months.map((month) => ({
-      date: month.key,
-      label: month.label,
-      value: month.delivered,
+    deliveredByDay: days.map((day) => ({
+      date: day.key,
+      label: day.label,
+      value: day.delivered,
     })),
-    revenueByMonth: months.map((month) => ({
-      date: month.key,
-      label: month.label,
-      value: month.revenue,
+    revenueByDay: days.map((day) => ({
+      date: day.key,
+      label: day.label,
+      value: day.revenue,
     })),
   };
 };
@@ -248,7 +259,7 @@ export default function AdminDashboard() {
     monthlyDeliveredOrders: 0,
     pendingOrders: 0,
   });
-  const [charts, setCharts] = useState({ deliveredByMonth: [], revenueByMonth: [] });
+  const [charts, setCharts] = useState({ deliveredByDay: [], revenueByDay: [] });
   const [hasOrderChartData, setHasOrderChartData] = useState(false);
   const [notice, setNotice] = useState('');
 
@@ -267,15 +278,24 @@ export default function AdminDashboard() {
 
       if (orderResult.status === 'fulfilled') {
         const orders = orderResult.value;
-        const currentMonth = new Date();
-        const currentMonthKey = getMonthKey(currentMonth);
-        const series = buildMonthlySeries(orders);
+        const currentMonthKey = getMonthKey(new Date());
+        const series = buildDailySeries(orders);
         const pendingOrders = orders.filter((order) => (order?.status || '').toLowerCase() === 'pending').length;
 
-        const currentMonthDeliveredOrders = series.deliveredByMonth.find(
-          (item) => item.date === currentMonthKey
-        )?.value ?? 0;
-        const currentMonthRevenue = series.revenueByMonth.find((item) => item.date === currentMonthKey)?.value ?? 0;
+        const deliveredInCurrentMonth = orders.filter((order) => {
+          if (!isDeliveredOrder(order)) return false;
+
+          const placedDayKey = getOrderPlacedDayKey(order);
+          if (!placedDayKey) return false;
+
+          return placedDayKey.slice(0, 7) === currentMonthKey;
+        });
+
+        const currentMonthDeliveredOrders = deliveredInCurrentMonth.length;
+        const currentMonthRevenue = deliveredInCurrentMonth.reduce((sum, order) => {
+          const total = Number(order?.total_price ?? order?.total ?? 0);
+          return sum + (Number.isFinite(total) ? total : 0);
+        }, 0);
 
         setCharts(series);
         setHasOrderChartData(true);
@@ -285,7 +305,7 @@ export default function AdminDashboard() {
           pendingOrders,
         });
       } else {
-        setCharts({ deliveredByMonth: [], revenueByMonth: [] });
+        setCharts({ deliveredByDay: [], revenueByDay: [] });
         setHasOrderChartData(false);
         setSummary({
           monthlyRevenue: 0,
@@ -330,12 +350,12 @@ export default function AdminDashboard() {
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
             <Card
-              title="Tổng doanh thu theo tháng"
+              title="Tổng doanh thu tháng này"
               value={formatCurrency(summary.monthlyRevenue)}
               hint="Chỉ tính đơn đã giao trong tháng hiện tại"
             />
             <Card
-              title="Tổng đơn đã giao theo tháng"
+              title="Tổng đơn đã giao tháng này"
               value={summary.monthlyDeliveredOrders}
               hint="Đếm các đơn completed / delivered"
             />
@@ -349,14 +369,14 @@ export default function AdminDashboard() {
           {hasOrderChartData ? (
             <div className="grid xl:grid-cols-2 gap-4">
               <LineChart
-                title="Đơn đã giao theo tháng"
-                data={charts.deliveredByMonth}
+                title="Đơn đã giao theo ngày"
+                data={charts.deliveredByDay}
                 color="#16a34a"
                 unit="đơn"
               />
               <LineChart
-                title="Doanh thu theo tháng"
-                data={charts.revenueByMonth}
+                title="Doanh thu theo ngày"
+                data={charts.revenueByDay}
                 color="#ea580c"
                 unit="VND"
               />

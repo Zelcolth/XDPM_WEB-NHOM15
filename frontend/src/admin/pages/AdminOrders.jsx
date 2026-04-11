@@ -44,6 +44,27 @@ const getPaymentStatus = (order) => {
   return 'unpaid';
 };
 
+const sortNewestFirst = (orders = []) =>
+  [...orders].sort((a, b) => {
+    const timeA = new Date(a?.created_at || 0).getTime();
+    const timeB = new Date(b?.created_at || 0).getTime();
+
+    if (timeA !== timeB) return timeB - timeA;
+
+    return Number(b?.id || 0) - Number(a?.id || 0);
+  });
+
+const getAllowedNextStatuses = (status) => {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === 'pending') return ['shipping', 'cancelled'];
+  if (normalized === 'shipping') return ['completed'];
+  return [];
+};
+
+const canChangeStatus = (currentStatus, nextStatus) =>
+  getAllowedNextStatuses(currentStatus).includes(nextStatus);
+
 const ActionButton = ({ children, variant = 'neutral', ...props }) => {
   const variantMap = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600',
@@ -79,7 +100,8 @@ export default function AdminOrders() {
 
     try {
       const data = await adminApi.getOrders();
-      setOrders(data.map((order) => ({ ...order, status: normalizeStatus(order?.status) })));
+      const normalized = data.map((order) => ({ ...order, status: normalizeStatus(order?.status) }));
+      setOrders(sortNewestFirst(normalized));
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {
         setNotAvailable(true);
@@ -96,13 +118,17 @@ export default function AdminOrders() {
     loadOrders();
   }, []);
 
-  const handleStatusChange = async (orderId, status) => {
+  const handleStatusChange = async (orderId, currentStatus, nextStatus) => {
+    if (!canChangeStatus(currentStatus, nextStatus)) {
+      return;
+    }
+
     setUpdatingId(orderId);
     setNotice('');
     try {
-      await adminApi.updateOrderStatus(orderId, status);
+      await adminApi.updateOrderStatus(orderId, nextStatus);
       setOrders((prev) =>
-        prev.map((order) => (order.id === orderId ? { ...order, status: normalizeStatus(status) } : order))
+        prev.map((order) => (order.id === orderId ? { ...order, status: normalizeStatus(nextStatus) } : order))
       );
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {
@@ -162,6 +188,9 @@ export default function AdminOrders() {
               <tbody>
                 {orders.map((order) => {
                   const status = normalizeStatus(order?.status);
+                  const canToShipping = canChangeStatus(status, 'shipping');
+                  const canToCompleted = canChangeStatus(status, 'completed');
+                  const canToCancelled = canChangeStatus(status, 'cancelled');
 
                   return (
                   <tr key={order.id} className="border-t border-slate-100">
@@ -179,24 +208,24 @@ export default function AdminOrders() {
                       <div className="flex flex-wrap gap-2">
                         <ActionButton
                           variant="primary"
-                          disabled={updatingId === order.id || status === 'shipping'}
-                          onClick={() => handleStatusChange(order.id, 'shipping')}
+                          disabled={updatingId === order.id || !canToShipping}
+                          onClick={() => handleStatusChange(order.id, status, 'shipping')}
                         >
                           Đang giao
                         </ActionButton>
 
                         <ActionButton
                           variant="success"
-                          disabled={updatingId === order.id || status === 'completed'}
-                          onClick={() => handleStatusChange(order.id, 'completed')}
+                          disabled={updatingId === order.id || !canToCompleted}
+                          onClick={() => handleStatusChange(order.id, status, 'completed')}
                         >
                           Hoàn thành
                         </ActionButton>
 
                         <ActionButton
                           variant="danger"
-                          disabled={updatingId === order.id || status === 'cancelled'}
-                          onClick={() => handleStatusChange(order.id, 'cancelled')}
+                          disabled={updatingId === order.id || !canToCancelled}
+                          onClick={() => handleStatusChange(order.id, status, 'cancelled')}
                         >
                           Hủy đơn
                         </ActionButton>

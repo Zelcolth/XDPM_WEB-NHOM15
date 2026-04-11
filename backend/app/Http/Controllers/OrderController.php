@@ -33,7 +33,7 @@ class OrderController extends Controller
             $query->where('user_id', $request->user()->id);
         }
 
-        $orders = $query->get();
+        $orders = $query->latest()->get();
 
         return response()->json([
             'status' => 'success',
