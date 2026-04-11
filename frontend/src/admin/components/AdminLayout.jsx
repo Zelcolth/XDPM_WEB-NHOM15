@@ -4,6 +4,7 @@ const navItems = [
   { to: '/admin', label: 'Tổng quan' },
   { to: '/admin/categories', label: 'Danh mục' },
   { to: '/admin/products', label: 'Món ăn' },
+  { to: '/admin/orders', label: 'Đơn hàng' },
 ];
 
 export default function AdminLayout({ user, onLogout, children }) {

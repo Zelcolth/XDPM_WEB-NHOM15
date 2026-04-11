@@ -48,4 +48,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/orders/{id}', [OrderController::class, 'show']);
 });
 
-Route::middleware(['auth:sanctum', 'admin'])->put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+Route::middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::put('/orders/{id}', [OrderController::class, 'updateStatus']);
+});

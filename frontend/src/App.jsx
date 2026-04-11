@@ -9,6 +9,7 @@ import RequireAdmin from './admin/RequireAdmin';
 import AdminDashboard from './admin/pages/AdminDashboard';
 import AdminCategories from './admin/pages/AdminCategories';
 import AdminProducts from './admin/pages/AdminProducts';
+import AdminOrders from './admin/pages/AdminOrders';
 
 function App() {
   return (
@@ -25,6 +26,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="orders" element={<AdminOrders />} />
         </Route>
       </Routes>
     </BrowserRouter>
