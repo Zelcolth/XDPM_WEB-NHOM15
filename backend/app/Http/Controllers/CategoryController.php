@@ -78,7 +78,7 @@ class CategoryController extends Controller
         *         @OA\JsonContent(
         *             required={"name"},
         *             @OA\Property(property="name", type="string", example="Pizza"),
-        *             @OA\Property(property="image", type="string", format="uri", nullable=true, example="https://example.com/pizza.jpg")
+        *             @OA\Property(property="image", type="string", format="uri", nullable=true, example=null)
         *         )
         *     ),
         *     @OA\Response(response=201, description="Tạo danh mục thành công", @OA\JsonContent(type="object")),
@@ -121,7 +121,7 @@ class CategoryController extends Controller
         *         required=true,
         *         @OA\JsonContent(
         *             @OA\Property(property="name", type="string", example="Fast Food"),
-        *             @OA\Property(property="image", type="string", format="uri", nullable=true, example="https://example.com/fastfood.jpg")
+        *             @OA\Property(property="image", type="string", format="uri", nullable=true, example=null)
         *         )
         *     ),
         *     @OA\Response(response=200, description="Cập nhật danh mục thành công", @OA\JsonContent(type="object")),

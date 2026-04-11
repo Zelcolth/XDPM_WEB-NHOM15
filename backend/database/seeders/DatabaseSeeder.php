@@ -308,5 +308,180 @@ class DatabaseSeeder extends Seeder
             ->whereIn('category_id', [$catCom, $catNuoc, $catAnVat])
             ->whereNotIn('name', $seededNames)
             ->delete();
+
+        // 4. TẠO DỮ LIỆU MẪU CHO ĐƠN HÀNG (nhiều tháng để vẽ dashboard)
+        $customerId = DB::table('users')->where('email', 'khachhang@gmail.com')->value('id');
+
+        if ($customerId) {
+            $seededOrders = [
+                [
+                    'id' => 9001,
+                    'status' => 'completed',
+                    'placed_at' => $now->copy()->subMonths(5)->day(8)->setTime(11, 15),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Giao giờ trưa',
+                    'items' => [
+                        ['name' => 'Cơm Tấm Sườn Bì Chả', 'quantity' => 1],
+                        ['name' => 'Trà Đào Cam Sả', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9002,
+                    'status' => 'completed',
+                    'placed_at' => $now->copy()->subMonths(4)->day(10)->setTime(12, 10),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => null,
+                    'items' => [
+                        ['name' => 'Cơm Gà Xối Mỡ', 'quantity' => 2],
+                        ['name' => 'Nước Cam Ép', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9003,
+                    'status' => 'completed',
+                    'placed_at' => $now->copy()->subMonths(3)->day(13)->setTime(18, 5),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Ít đá',
+                    'items' => [
+                        ['name' => 'Cơm Bò Lúc Lắc', 'quantity' => 1],
+                        ['name' => 'Khoai Tây Chiên Phô Mai', 'quantity' => 1],
+                        ['name' => 'Matcha Latte Đá', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9004,
+                    'status' => 'cancelled',
+                    'placed_at' => $now->copy()->subMonths(2)->day(7)->setTime(9, 45),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Khách hủy đơn',
+                    'items' => [
+                        ['name' => 'Cơm Thịt Kho Trứng', 'quantity' => 1],
+                        ['name' => 'Trà Chanh Mật Ong', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9005,
+                    'status' => 'completed',
+                    'placed_at' => $now->copy()->subMonth()->day(15)->setTime(11, 50),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => null,
+                    'items' => [
+                        ['name' => 'Cơm Sườn Non Nướng Mật Ong', 'quantity' => 1],
+                        ['name' => 'Hồng Trà Sữa', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9006,
+                    'status' => 'completed',
+                    'placed_at' => $now->copy()->day(3)->setTime(10, 20),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Giao sớm giúp mình',
+                    'items' => [
+                        ['name' => 'Cơm Cá Kho Tộ', 'quantity' => 1],
+                        ['name' => 'Bánh Tráng Trộn', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9007,
+                    'status' => 'pending',
+                    'placed_at' => $now->copy()->day(6)->setTime(14, 35),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Đợi xác nhận',
+                    'items' => [
+                        ['name' => 'Cơm Chiên Dương Châu', 'quantity' => 1],
+                        ['name' => 'Sinh Tố Bơ', 'quantity' => 1],
+                    ],
+                ],
+                [
+                    'id' => 9008,
+                    'status' => 'shipping',
+                    'placed_at' => $now->copy()->day(9)->setTime(16, 25),
+                    'address' => 'KTX Khu B, phòng 305',
+                    'phone' => '0912345678',
+                    'note' => 'Đang giao',
+                    'items' => [
+                        ['name' => 'Cơm Sườn Trứng Ốp La', 'quantity' => 1],
+                        ['name' => 'Trà Sữa Trân Châu Đường Đen', 'quantity' => 1],
+                    ],
+                ],
+            ];
+
+            $orderIds = array_column($seededOrders, 'id');
+            DB::table('order_items')->whereIn('order_id', $orderIds)->delete();
+
+            $allItemNames = [];
+            foreach ($seededOrders as $order) {
+                foreach ($order['items'] as $item) {
+                    $allItemNames[] = $item['name'];
+                }
+            }
+
+            $productMap = DB::table('products')
+                ->whereIn('name', array_values(array_unique($allItemNames)))
+                ->get(['id', 'name', 'price'])
+                ->keyBy('name');
+
+            $orderItemsToInsert = [];
+            $orderItemId = 99001;
+
+            foreach ($seededOrders as $order) {
+                $orderTotal = 0;
+
+                foreach ($order['items'] as $item) {
+                    $product = $productMap->get($item['name']);
+                    if (! $product) {
+                        continue;
+                    }
+
+                    $price = (float) $product->price;
+                    $quantity = (int) $item['quantity'];
+                    $orderTotal += $price * $quantity;
+
+                    $orderItemsToInsert[] = [
+                        'id' => $orderItemId++,
+                        'order_id' => $order['id'],
+                        'product_id' => $product->id,
+                        'quantity' => $quantity,
+                        'price' => $price,
+                        'created_at' => $order['placed_at']->copy(),
+                        'updated_at' => $order['placed_at']->copy(),
+                    ];
+                }
+
+                $updatedAt = $order['placed_at']->copy();
+                if ($order['status'] === 'completed') {
+                    $updatedAt->addHours(2);
+                } elseif ($order['status'] === 'shipping') {
+                    $updatedAt->addHours(1);
+                } elseif ($order['status'] === 'cancelled') {
+                    $updatedAt->addMinutes(30);
+                }
+
+                DB::table('orders')->updateOrInsert(
+                    ['id' => $order['id']],
+                    [
+                        'user_id' => $customerId,
+                        'total_price' => $orderTotal,
+                        'status' => $order['status'],
+                        'address' => $order['address'],
+                        'phone' => $order['phone'],
+                        'note' => $order['note'],
+                        'created_at' => $order['placed_at']->copy(),
+                        'updated_at' => $updatedAt,
+                    ]
+                );
+            }
+
+            if (! empty($orderItemsToInsert)) {
+                DB::table('order_items')->insert($orderItemsToInsert);
+            }
+        }
     }
 }

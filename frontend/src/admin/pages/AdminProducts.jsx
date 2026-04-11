@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { adminApi, ApiNotAvailableError } from '../services/adminApi';
 import { formatCurrency } from '../utils/formatters';
+import axiosClient from '../../api/axiosClient';
 
 const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -30,6 +31,18 @@ export default function AdminProducts() {
   const [imagePreview, setImagePreview] = useState('');
   const [removeImage, setRemoveImage] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  const resolveImageUrl = (value) => {
+    if (!value) return '';
+    if (typeof value !== 'string') return '';
+    if (value.startsWith('blob:') || value.startsWith('http')) return value;
+    try {
+      const base = axiosClient.defaults.baseURL.replace(/\/api\/?$/, '');
+      return `${base}/${value.replace(/^\/+/, '')}`;
+    } catch {
+      return value;
+    }
+  };
 
   const validateImageFile = (file) => {
     if (!file) return '';
@@ -94,7 +107,7 @@ export default function AdminProducts() {
       is_available: Boolean(item.is_available),
     });
     setImageFile(null);
-    setImagePreview(item.image || '');
+    setImagePreview(resolveImageUrl(item.image || ''));
     setRemoveImage(false);
     setUploadProgress(0);
   };
@@ -346,7 +359,7 @@ export default function AdminProducts() {
                   if (file) {
                     setImagePreview(URL.createObjectURL(file));
                   } else {
-                    setImagePreview(formData.image || '');
+                    setImagePreview(resolveImageUrl(formData.image || ''));
                   }
                 }}
                 className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white"
@@ -376,7 +389,7 @@ export default function AdminProducts() {
                         setImageFile(null);
                         setImagePreview('');
                       } else {
-                        setImagePreview(formData.image || '');
+                        setImagePreview(resolveImageUrl(formData.image || ''));
                       }
                     }}
                   />
@@ -508,7 +521,7 @@ export default function AdminProducts() {
                     <td className="px-4 py-3">
                       {item.image ? (
                         <img
-                          src={item.image}
+                          src={resolveImageUrl(item.image)}
                           alt={item.name}
                           className="w-14 h-14 rounded-md object-cover border border-slate-200"
                           onError={(e) => {
@@ -575,7 +588,7 @@ export default function AdminProducts() {
               <p className="text-slate-500">Ảnh</p>
               {selectedProduct.image ? (
                 <img
-                  src={selectedProduct.image}
+                  src={resolveImageUrl(selectedProduct.image)}
                   alt={selectedProduct.name}
                   className="mt-2 w-40 h-28 object-cover rounded-lg border border-slate-200"
                 />

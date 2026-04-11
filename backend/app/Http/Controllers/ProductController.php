@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -95,7 +97,7 @@ class ProductController extends Controller
      *             @OA\Property(property="price", type="number", example=30000),
      *             @OA\Property(property="category_id", type="integer", example=1),
      *             @OA\Property(property="description", type="string"),
-     *             @OA\Property(property="image", type="string")
+    *             @OA\Property(property="image", type="string", nullable=true, example=null)
      *         )
      *     ),
      *     @OA\Response(
@@ -114,16 +116,24 @@ class ProductController extends Controller
             'price' => 'required|numeric',
             'category_id' => 'required|exists:categories,id',
             'description' => 'nullable|string',
-            'image' => 'nullable|string'
+            'image' => 'nullable|string',
+            'is_available' => 'nullable|boolean',
+            'image_file' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120'
         ]);
+
+        $imagePath = $request->input('image');
+        if ($request->hasFile('image_file')) {
+            $stored = $request->file('image_file')->store('products', 'public');
+            $imagePath = 'storage/' . $stored;
+        }
 
         $product = Product::create([
             'name' => $request->name,
             'price' => $request->price,
             'category_id' => $request->category_id,
             'description' => $request->description,
-            'image' => $request->image,
-            'is_available' => 1
+            'image' => $imagePath,
+            'is_available' => $request->boolean('is_available', true) ? 1 : 0
         ]);
 
         return response()->json([
@@ -151,7 +161,7 @@ class ProductController extends Controller
  *             @OA\Property(property="price", type="number"),
  *             @OA\Property(property="category_id", type="integer"),
  *             @OA\Property(property="description", type="string"),
- *             @OA\Property(property="image", type="string")
+ *             @OA\Property(property="image", type="string", nullable=true, example=null)
  *         )
  *     ),
  *     @OA\Response(response=200, description="Cập nhật thành công"),
@@ -177,11 +187,40 @@ public function update(Request $request, $id)
         'price' => 'sometimes|numeric',
         'category_id' => 'sometimes|exists:categories,id',
         'description' => 'nullable|string',
-        'image' => 'nullable|string'
+        'image' => 'nullable|string',
+        'is_available' => 'nullable|boolean',
+        'remove_image' => 'nullable|boolean',
+        'image_file' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120'
     ]);
 
-    // 3. Update
-    $product->update($request->all());
+    $shouldRemoveImage = $request->boolean('remove_image', false);
+
+    if ($shouldRemoveImage && $product->image) {
+        if (is_string($product->image) && Str::startsWith($product->image, 'storage/')) {
+            $diskPath = substr($product->image, strlen('storage/'));
+            Storage::disk('public')->delete($diskPath);
+        }
+        $product->image = null;
+    }
+
+    if ($request->hasFile('image_file')) {
+        if ($product->image && is_string($product->image) && Str::startsWith($product->image, 'storage/')) {
+            $diskPath = substr($product->image, strlen('storage/'));
+            Storage::disk('public')->delete($diskPath);
+        }
+
+        $stored = $request->file('image_file')->store('products', 'public');
+        $product->image = 'storage/' . $stored;
+    } elseif ($request->filled('image')) {
+        $product->image = $request->input('image');
+    }
+
+    $product->fill($request->only(['name', 'price', 'category_id', 'description']));
+    if ($request->has('is_available')) {
+        $product->is_available = $request->boolean('is_available') ? 1 : 0;
+    }
+
+    $product->save();
 
     // 4. Response
     return response()->json([
