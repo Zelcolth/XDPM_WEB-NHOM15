@@ -27,13 +27,13 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Order::with('items.product');
+        $query = Order::with('items.product', 'user');
 
         if ($request->user()->role !== 'admin') {
             $query->where('user_id', $request->user()->id);
         }
 
-        $orders = $query->get();
+        $orders = $query->latest()->get();
 
         return response()->json([
             'status' => 'success',

@@ -56,6 +56,13 @@ export default function Account() {
       setOrders(Array.isArray(data) ? data : []);
       setOrdersFetched(true);
     } catch (err) {
+      if (err?.response?.status === 401) {
+        localStorage.removeItem('token');
+        setAuthToken(null);
+        navigate('/auth');
+        return;
+      }
+
       console.error('Fetch orders error', err);
       setOrdersError('Không thể tải lịch sử đơn hàng.');
     } finally {
@@ -68,6 +75,7 @@ export default function Account() {
       try {
         const token = localStorage.getItem("token");
         if (!token) {
+          setAuthToken(null);
           navigate("/auth");
           return;
         }
@@ -88,8 +96,19 @@ export default function Account() {
         await fetchOrders();
 
       } catch (err) {
-        localStorage.removeItem("token");
-        navigate("/auth");
+        if (err?.response?.status === 401) {
+          localStorage.removeItem("token");
+          setAuthToken(null);
+          navigate("/auth");
+          return;
+        }
+
+        console.error('Fetch user error', err);
+        setToast({
+          visible: true,
+          message: 'Không thể tải thông tin tài khoản. Vui lòng thử lại sau.',
+          type: 'error'
+        });
       } finally {
         setLoading(false);
       }

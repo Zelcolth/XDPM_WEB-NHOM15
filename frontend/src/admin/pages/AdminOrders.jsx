@@ -3,7 +3,88 @@ import OrderStatusBadge from '../components/OrderStatusBadge';
 import { adminApi, ApiNotAvailableError } from '../services/adminApi';
 import { formatCurrency, formatDateTime } from '../utils/formatters';
 
-const statusOptions = ['pending', 'shipping', 'completed', 'cancelled'];
+const normalizeStatus = (status) => {
+  const normalized = String(status || 'pending').toLowerCase();
+
+  if (normalized === 'delivered') return 'completed';
+  if (normalized === 'paid' || normalized === 'unpaid') return 'pending';
+
+  if (['pending', 'shipping', 'completed', 'cancelled'].includes(normalized)) {
+    return normalized;
+  }
+
+  return 'pending';
+};
+
+const getCustomerName = (order) => {
+  const value =
+    order?.user?.name ||
+    order?.customer_name ||
+    order?.full_name ||
+    order?.receiver_name ||
+    order?.name;
+
+  return value ? String(value).trim() : `Khách hàng #${order?.user_id || '--'}`;
+};
+
+const getPaymentStatus = (order) => {
+  const explicit = String(order?.payment_status ?? '').toLowerCase();
+  if (['paid', 'da_thanh_toan', 'completed', 'success', '1', 'true'].includes(explicit)) {
+    return 'paid';
+  }
+  if (['unpaid', 'chua_thanh_toan', 'pending', 'failed', '0', 'false'].includes(explicit)) {
+    return 'unpaid';
+  }
+
+  const status = String(order?.status || '').toLowerCase();
+  if (status === 'paid') return 'paid';
+  if (status === 'unpaid') return 'unpaid';
+  if (status === 'completed' || status === 'delivered') return 'paid';
+
+  return 'unpaid';
+};
+
+const sortNewestFirst = (orders = []) =>
+  [...orders].sort((a, b) => {
+    const timeA = new Date(a?.created_at || 0).getTime();
+    const timeB = new Date(b?.created_at || 0).getTime();
+
+    if (timeA !== timeB) return timeB - timeA;
+
+    return Number(b?.id || 0) - Number(a?.id || 0);
+  });
+
+const getAllowedNextStatuses = (status) => {
+  const normalized = normalizeStatus(status);
+
+  if (normalized === 'pending') return ['shipping', 'cancelled'];
+  if (normalized === 'shipping') return ['completed'];
+  return [];
+};
+
+const canChangeStatus = (currentStatus, nextStatus) =>
+  getAllowedNextStatuses(currentStatus).includes(nextStatus);
+
+const ActionButton = ({ children, variant = 'neutral', ...props }) => {
+  const variantMap = {
+    primary: 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600',
+    danger: 'bg-rose-50 text-rose-700 hover:bg-rose-100 border-rose-200',
+    neutral: 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300',
+  };
+
+  return (
+    <button
+      type="button"
+      className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed ${
+        variantMap[variant] || variantMap.neutral
+      }`}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -19,7 +100,8 @@ export default function AdminOrders() {
 
     try {
       const data = await adminApi.getOrders();
-      setOrders(data);
+      const normalized = data.map((order) => ({ ...order, status: normalizeStatus(order?.status) }));
+      setOrders(sortNewestFirst(normalized));
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {
         setNotAvailable(true);
@@ -36,13 +118,17 @@ export default function AdminOrders() {
     loadOrders();
   }, []);
 
-  const handleStatusChange = async (orderId, status) => {
+  const handleStatusChange = async (orderId, currentStatus, nextStatus) => {
+    if (!canChangeStatus(currentStatus, nextStatus)) {
+      return;
+    }
+
     setUpdatingId(orderId);
     setNotice('');
     try {
-      await adminApi.updateOrderStatus(orderId, status);
+      await adminApi.updateOrderStatus(orderId, nextStatus);
       setOrders((prev) =>
-        prev.map((order) => (order.id === orderId ? { ...order, status } : order))
+        prev.map((order) => (order.id === orderId ? { ...order, status: normalizeStatus(nextStatus) } : order))
       );
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {
@@ -94,36 +180,59 @@ export default function AdminOrders() {
                   <th className="text-left px-4 py-3">Khách hàng</th>
                   <th className="text-left px-4 py-3">Tổng tiền</th>
                   <th className="text-left px-4 py-3">Trạng thái</th>
+                  <th className="text-left px-4 py-3">Trạng thái thanh toán</th>
                   <th className="text-left px-4 py-3">Ngày tạo</th>
-                  <th className="text-left px-4 py-3">Duyệt nhanh</th>
+                  <th className="text-left px-4 py-3">Thao tác nhanh</th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {orders.map((order) => {
+                  const status = normalizeStatus(order?.status);
+                  const canToShipping = canChangeStatus(status, 'shipping');
+                  const canToCompleted = canChangeStatus(status, 'completed');
+                  const canToCancelled = canChangeStatus(status, 'cancelled');
+
+                  return (
                   <tr key={order.id} className="border-t border-slate-100">
                     <td className="px-4 py-3 font-medium text-slate-800">#{order.id}</td>
-                    <td className="px-4 py-3">{order?.user?.name || `User #${order.user_id || '--'}`}</td>
+                    <td className="px-4 py-3">{getCustomerName(order)}</td>
                     <td className="px-4 py-3">{formatCurrency(order.total_price)}</td>
                     <td className="px-4 py-3">
-                      <OrderStatusBadge status={order.status} />
+                      <OrderStatusBadge status={status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <OrderStatusBadge status={getPaymentStatus(order)} />
                     </td>
                     <td className="px-4 py-3">{formatDateTime(order.created_at)}</td>
                     <td className="px-4 py-3">
-                      <select
-                        value={order.status || 'pending'}
-                        disabled={updatingId === order.id}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value)}
-                        className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white"
-                      >
-                        {statusOptions.map((status) => (
-                          <option key={status} value={status}>
-                            {status}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="flex flex-wrap gap-2">
+                        <ActionButton
+                          variant="primary"
+                          disabled={updatingId === order.id || !canToShipping}
+                          onClick={() => handleStatusChange(order.id, status, 'shipping')}
+                        >
+                          Đang giao
+                        </ActionButton>
+
+                        <ActionButton
+                          variant="success"
+                          disabled={updatingId === order.id || !canToCompleted}
+                          onClick={() => handleStatusChange(order.id, status, 'completed')}
+                        >
+                          Hoàn thành
+                        </ActionButton>
+
+                        <ActionButton
+                          variant="danger"
+                          disabled={updatingId === order.id || !canToCancelled}
+                          onClick={() => handleStatusChange(order.id, status, 'cancelled')}
+                        >
+                          Hủy đơn
+                        </ActionButton>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </div>
