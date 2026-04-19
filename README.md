@@ -172,9 +172,3 @@ php artisan l5-swagger:generate
 
 - Thanh toán QR là mock demo, chưa tích hợp cổng thanh toán thật.
 - Chưa tách bảng payment riêng, dữ liệu thanh toán đang theo quy ước nghiệp vụ của đồ án.
-
-## 12. Lưu ý khi nộp lên GitHub
-
-- Không commit file chứa thông tin nhạy cảm (mật khẩu thật, token thật).
-- Kiểm tra lại thông tin 6 thành viên trong mục 2 trước khi nộp.
-- Đảm bảo các lệnh chạy trong mục 6 được test lại trên máy sạch nếu có thể.
