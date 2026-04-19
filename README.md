@@ -8,14 +8,14 @@
 
 ## 2. Thành viên nhóm (6 người)
 
-| STT | MSSV | Họ tên | Lớp |
+| STT | MSSV | Họ tên (Username GitHub) | Lớp |
 | --- | --- | --- | --- |
-| 1 | DH52200314 | Trần Huy An | D22_TH15 |
-| 2 | DH52200449 | Đỗ Tô Thanh Danh | D22_TH15 |
-| 3 | DH52200486 | Nguyễn Tiến Đạt | D22_TH15 |
-| 4 | DH52201232 | Lê Đỗ Duy Phúc | D22_TH15 |
-| 5 | DH52110819 | Lý Tuấn Đức | D21_TH06 |
-| 6 | DH52200834 | Hồ Bảo Khang | D22_TH05 |
+| 1 | DH52200314 | Trần Huy An (huyan189) | D22_TH15 |
+| 2 | DH52200449 | Đỗ Tô Thanh Danh (Danhtocdo12300) | D22_TH15 |
+| 3 | DH52200486 | Nguyễn Tiến Đạt (Zelcolth) | D22_TH15 |
+| 4 | DH52201232 | Lê Đỗ Duy Phúc (BinLee01) | D22_TH15 |
+| 5 | DH52110819 | Lý Tuấn Đức (FunHell5336) | D21_TH06 |
+| 6 | DH52200834 | Hồ Bảo Khang (Ashborn) | D22_TH05 |
 
 ## 3. Chức năng chính
 
