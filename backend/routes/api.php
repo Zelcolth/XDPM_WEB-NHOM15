@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MockQrPaymentController;
 use App\Http\Controllers\OrderController;
 /*
 |--------------------------------------------------------------------------
@@ -46,7 +47,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/orders', [OrderController::class, 'store']);
     Route::post('/orders/{id}/pay', [OrderController::class, 'pay']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders/{id}/payment/qr-session', [MockQrPaymentController::class, 'createSession']);
 });
+
+Route::get('/mock-payments/qr/confirm/{sessionId}', [MockQrPaymentController::class, 'confirmByLink'])
+    ->name('mock.qr.confirm')
+    ->middleware(['throttle:30,1']);
 
 Route::middleware(['auth:sanctum', 'admin'])->group(function () {
     Route::patch('/orders/{id}/status', [OrderController::class, 'updateStatus']);

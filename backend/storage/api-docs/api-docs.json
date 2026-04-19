@@ -316,7 +316,7 @@
                                     "image": {
                                         "type": "string",
                                         "format": "uri",
-                                        "example": "https://example.com/pizza.jpg",
+                                        "example": null,
                                         "nullable": true
                                     }
                                 },
@@ -419,7 +419,7 @@
                                     "image": {
                                         "type": "string",
                                         "format": "uri",
-                                        "example": "https://example.com/fastfood.jpg",
+                                        "example": null,
                                         "nullable": true
                                     }
                                 },
@@ -508,6 +508,102 @@
                         "sanctum": []
                     }
                 ]
+            }
+        },
+        "/orders/{id}/payment/qr-session": {
+            "post": {
+                "tags": [
+                    "Mock QR Payments"
+                ],
+                "summary": "Tạo hoặc lấy phiên QR mock cho đơn hàng",
+                "operationId": "06a9b0d0d9c5a94232ff6f2893fae0f6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID đơn hàng",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "force_new": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Thanh cong"
+                    },
+                    "400": {
+                        "description": "Đơn hàng không hợp lệ để thanh toán"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Order not found"
+                    },
+                    "401": {
+                        "description": "Chưa xác thực"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/mock-payments/qr/confirm/{sessionId}": {
+            "get": {
+                "tags": [
+                    "Mock QR Payments"
+                ],
+                "summary": "Xác nhận thanh toán mock khi người dùng quét QR",
+                "operationId": "6977430a0ddc5cc188d3fcb784103cc2",
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Xác nhận thanh toán thành công"
+                    },
+                    "400": {
+                        "description": "Đơn hàng không hợp lệ"
+                    },
+                    "404": {
+                        "description": "Phiên hoặc đơn hàng không tồn tại"
+                    },
+                    "409": {
+                        "description": "Phiên đã được dùng"
+                    },
+                    "410": {
+                        "description": "Phiên đã hết hạn"
+                    }
+                }
             }
         },
         "/orders": {
@@ -779,7 +875,9 @@
                                         "type": "string"
                                     },
                                     "image": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -869,7 +967,9 @@
                                         "type": "string"
                                     },
                                     "image": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": null,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -938,6 +1038,10 @@
         {
             "name": "Categories",
             "description": "Quản lý danh mục"
+        },
+        {
+            "name": "Mock QR Payments",
+            "description": "Mock QR Payments"
         },
         {
             "name": "Orders",

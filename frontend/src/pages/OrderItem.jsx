@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
-import heroImg from '../assets/hero.png';
+import heroImg from '../assets/Phol.png';
 import Toast from '../components/Toast';
 import MainHeader from '../components/MainHeader';
 import MainFooter from '../components/MainFooter';

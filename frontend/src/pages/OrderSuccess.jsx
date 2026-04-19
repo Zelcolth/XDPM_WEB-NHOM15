@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import axiosClient, { setAuthToken } from '../api/axiosClient';
 import MainHeader from '../components/MainHeader';
@@ -13,10 +13,30 @@ const formatMoney = (value) =>
 
 const statusLabel = (status) => {
   const key = String(status || '').toLowerCase();
-  if (key === 'pending' || key === 'paid' || key === 'shipping') return 'Đang giao hàng';
+  if (key === 'pending') return 'Chờ thanh toán';
+  if (key === 'paid' || key === 'shipping') return 'Đang giao hàng';
   if (key === 'completed') return 'Đã giao hàng';
   if (key === 'cancelled') return 'Đã hủy';
   return status || 'Không xác định';
+};
+
+const parsePaymentMethodFromNote = (note, fallback = 'cash') => {
+  const raw = String(note || '');
+  const match = raw.match(/thanh\s*toan\s*:\s*([a-zA-Z0-9_]+)/i);
+  if (!match) return fallback;
+  return String(match[1]).toLowerCase();
+};
+
+const paymentMethodLabel = (method) => {
+  if (method === 'qr_transfer') return 'Chuyển khoản QR (mock)';
+  return 'Tiền mặt khi nhận hàng';
+};
+
+const formatSeconds = (seconds) => {
+  const safe = Math.max(0, Number(seconds) || 0);
+  const mins = Math.floor(safe / 60);
+  const secs = safe % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 };
 
 export default function OrderSuccess() {
@@ -25,40 +45,134 @@ export default function OrderSuccess() {
   const { id } = useParams();
 
   const [order, setOrder] = useState(location.state?.order || null);
+  const [paymentMethod, setPaymentMethod] = useState(
+    String(location.state?.paymentMethod || '').toLowerCase()
+  );
   const [loading, setLoading] = useState(!location.state?.order);
   const [error, setError] = useState('');
+  const [qrSession, setQrSession] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const [qrError, setQrError] = useState('');
+  const [nowTs, setNowTs] = useState(Date.now());
 
-  useEffect(() => {
-    let mounted = true;
-
-    const loadOrder = async () => {
-      if (order) return;
-
+  const fetchOrder = useCallback(
+    async (silent = false) => {
       const token = localStorage.getItem('token');
       if (!token) {
         setError('Bạn cần đăng nhập để xem chi tiết đơn hàng.');
-        setLoading(false);
+        if (!silent) setLoading(false);
         return;
       }
+
+      if (!silent) setLoading(true);
 
       try {
         setAuthToken(token);
         const res = await axiosClient.get(`/orders/${id}`);
-        if (!mounted) return;
-        setOrder(res.data?.data || null);
+        const nextOrder = res.data?.data || null;
+        setOrder(nextOrder);
+        setPaymentMethod((prev) => {
+          const fromNote = parsePaymentMethodFromNote(nextOrder?.note, 'cash');
+          return (prev || fromNote || 'cash').toLowerCase();
+        });
+        setError('');
       } catch (err) {
         console.error(err);
-        if (mounted) setError('Không thể tải chi tiết đơn hàng.');
+        if (err?.response?.status === 401) {
+          localStorage.removeItem('token');
+          setAuthToken(null);
+          navigate('/auth?mode=login');
+          return;
+        }
+        setError('Không thể tải chi tiết đơn hàng.');
       } finally {
-        if (mounted) setLoading(false);
+        if (!silent) setLoading(false);
       }
-    };
+    },
+    [id, navigate]
+  );
 
-    loadOrder();
-    return () => {
-      mounted = false;
-    };
-  }, [id, order]);
+  const createQrSession = useCallback(
+    async (forceNew = false) => {
+      if (!order?.id) return;
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('Bạn cần đăng nhập để tiếp tục thanh toán.');
+        return;
+      }
+
+      try {
+        setQrLoading(true);
+        setQrError('');
+        setAuthToken(token);
+
+        const res = await axiosClient.post(`/orders/${order.id}/payment/qr-session`, {
+          force_new: forceNew,
+        });
+
+        setQrSession(res.data?.data || null);
+      } catch (err) {
+        console.error(err);
+        const msg = err?.response?.data?.message || 'Không thể tạo mã QR thanh toán lúc này.';
+        setQrError(msg);
+      } finally {
+        setQrLoading(false);
+      }
+    },
+    [order?.id]
+  );
+
+  useEffect(() => {
+    if (order) {
+      setLoading(false);
+      if (!paymentMethod) {
+        setPaymentMethod(parsePaymentMethodFromNote(order?.note, 'cash'));
+      }
+      return;
+    }
+
+    fetchOrder(false);
+  }, [fetchOrder, order, paymentMethod]);
+
+  const isQrTransfer = paymentMethod === 'qr_transfer';
+  const isOrderPending = String(order?.status || '').toLowerCase() === 'pending';
+
+  useEffect(() => {
+    if (!order?.id || !isQrTransfer || !isOrderPending) return;
+    if (qrSession || qrLoading) return;
+
+    createQrSession(false);
+  }, [order?.id, isQrTransfer, isOrderPending, qrSession, qrLoading, createQrSession]);
+
+  useEffect(() => {
+    if (!order?.id || !isQrTransfer || !isOrderPending) return;
+
+    const timer = setInterval(() => {
+      fetchOrder(true);
+    }, 3000);
+
+    return () => clearInterval(timer);
+  }, [order?.id, isQrTransfer, isOrderPending, fetchOrder]);
+
+  useEffect(() => {
+    if (!isQrTransfer || !isOrderPending || !qrSession?.expires_at) return;
+
+    const timer = setInterval(() => {
+      setNowTs(Date.now());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isQrTransfer, isOrderPending, qrSession?.expires_at]);
+
+  const remainingSeconds = useMemo(() => {
+    if (!qrSession?.expires_at) return 0;
+    const expiresAt = new Date(qrSession.expires_at).getTime();
+    if (!expiresAt) return 0;
+    return Math.max(0, Math.floor((expiresAt - nowTs) / 1000));
+  }, [qrSession?.expires_at, nowTs]);
+
+  const isQrExpired = isOrderPending && isQrTransfer && remainingSeconds === 0;
 
   const items = order?.items || [];
 
@@ -76,8 +190,12 @@ export default function OrderSuccess() {
             <h1 className="text-3xl font-bold text-gray-900">Đặt hàng thành công</h1>
             <p className="text-gray-500 mt-2">Cảm ơn bạn đã đặt món tại VèoFood.</p>
           </div>
-          <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold">
-            Thành công
+          <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
+            isOrderPending && isQrTransfer
+              ? 'bg-amber-100 text-amber-700'
+              : 'bg-green-100 text-green-700'
+          }`}>
+            {isOrderPending && isQrTransfer ? 'Chờ thanh toán' : 'Thành công'}
           </div>
         </div>
 
@@ -98,6 +216,67 @@ export default function OrderSuccess() {
                 <div className="text-sm text-gray-500">Trạng thái</div>
                 <div className="font-bold text-lg">{statusLabel(order.status)}</div>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-gray-200 p-5 mb-8 bg-orange-50/40">
+              <h2 className="text-xl font-bold mb-4">Thanh toán</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Phương thức: <span className="font-semibold text-gray-800">{paymentMethodLabel(paymentMethod)}</span>
+              </p>
+
+              {isQrTransfer && (
+                <>
+                  {String(order.status || '').toLowerCase() === 'paid' ? (
+                    <div className="rounded-xl border border-green-200 bg-green-50 text-green-700 p-4 text-sm">
+                      Thanh toán đã được xác nhận. Đơn hàng sẽ sớm được xử lý.
+                    </div>
+                  ) : qrLoading ? (
+                    <div className="text-gray-600">Đang tạo mã QR thanh toán...</div>
+                  ) : qrError ? (
+                    <div className="space-y-3">
+                      <div className="text-red-600 text-sm">{qrError}</div>
+                      <button
+                        onClick={() => createQrSession(true)}
+                        className="px-4 py-2 rounded-full bg-orange-500 text-white hover:bg-orange-600 text-sm"
+                      >
+                        Tạo lại mã QR
+                      </button>
+                    </div>
+                  ) : qrSession ? (
+                    <div className="grid md:grid-cols-2 gap-5 items-start">
+                      <div className="rounded-xl bg-white border border-gray-200 p-4 text-center">
+                        <img
+                          src={qrSession.qr_image_url}
+                          alt="QR thanh toán mock"
+                          className="w-52 h-52 mx-auto object-contain"
+                        />
+                        <p className="text-sm text-gray-600 mt-3">
+                          Quét QR bằng điện thoại để xác nhận thanh toán cho đơn hàng này.
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-white border border-gray-200 p-4 space-y-3">
+                        <div className="text-sm text-gray-600">
+                          Số tiền cần chuyển:
+                          <div className="text-xl font-bold text-orange-600 mt-1">{formatMoney(order.total_price)}</div>
+                        </div>
+
+                        <div className={`text-sm font-semibold ${isQrExpired ? 'text-red-600' : 'text-amber-600'}`}>
+                          {isQrExpired
+                            ? 'Mã QR đã hết hạn'
+                            : `Mã QR hết hạn sau: ${formatSeconds(remainingSeconds)}`}
+                        </div>
+
+                        <p className="text-xs text-gray-500">
+                          Hệ thống sẽ tự cập nhật trạng thái đơn khi mã QR được quét thành công.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-gray-600">Đang chuẩn bị mã QR...</div>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="rounded-2xl border border-gray-200 p-5 mb-8">

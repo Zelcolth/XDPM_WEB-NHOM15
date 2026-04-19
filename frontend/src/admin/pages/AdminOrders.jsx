@@ -27,7 +27,23 @@ const getCustomerName = (order) => {
   return value ? String(value).trim() : `Khách hàng #${order?.user_id || '--'}`;
 };
 
+const parsePaymentMethodFromNote = (note) => {
+  const raw = String(note || '');
+  const match = raw.match(/thanh\s*toan\s*:\s*([a-zA-Z0-9_]+)/i);
+  return String(match?.[1] || '').toLowerCase();
+};
+
 const getPaymentStatus = (order) => {
+  const status = String(order?.raw_status ?? (order?.status || '')).toLowerCase();
+  const paymentMethod = parsePaymentMethodFromNote(order?.note);
+
+  // COD orders are considered paid when delivery is completed.
+  if ((status === 'completed' || status === 'delivered') && paymentMethod === 'cash') {
+    return 'paid';
+  }
+
+  if (status === 'completed' || status === 'delivered') return 'paid';
+
   const explicit = String(order?.payment_status ?? '').toLowerCase();
   if (['paid', 'da_thanh_toan', 'completed', 'success', '1', 'true'].includes(explicit)) {
     return 'paid';
@@ -36,10 +52,8 @@ const getPaymentStatus = (order) => {
     return 'unpaid';
   }
 
-  const status = String(order?.status || '').toLowerCase();
   if (status === 'paid') return 'paid';
   if (status === 'unpaid') return 'unpaid';
-  if (status === 'completed' || status === 'delivered') return 'paid';
 
   return 'unpaid';
 };
@@ -100,7 +114,14 @@ export default function AdminOrders() {
 
     try {
       const data = await adminApi.getOrders();
-      const normalized = data.map((order) => ({ ...order, status: normalizeStatus(order?.status) }));
+      const normalized = data.map((order) => {
+        const rawStatus = String(order?.status || '').toLowerCase();
+        return {
+          ...order,
+          raw_status: rawStatus,
+          status: normalizeStatus(rawStatus),
+        };
+      });
       setOrders(sortNewestFirst(normalized));
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {
@@ -128,7 +149,27 @@ export default function AdminOrders() {
     try {
       await adminApi.updateOrderStatus(orderId, nextStatus);
       setOrders((prev) =>
-        prev.map((order) => (order.id === orderId ? { ...order, status: normalizeStatus(nextStatus) } : order))
+        prev.map((order) => {
+          if (order.id !== orderId) return order;
+
+          const wasPaid = getPaymentStatus(order) === 'paid';
+
+          const next = {
+            ...order,
+            raw_status: String(nextStatus || '').toLowerCase(),
+            status: normalizeStatus(nextStatus),
+          };
+
+          if (wasPaid) {
+            next.payment_status = 'paid';
+          }
+
+          if (String(nextStatus || '').toLowerCase() === 'completed' && parsePaymentMethodFromNote(order?.note) === 'cash') {
+            next.payment_status = 'paid';
+          }
+
+          return next;
+        })
       );
     } catch (error) {
       if (error instanceof ApiNotAvailableError) {

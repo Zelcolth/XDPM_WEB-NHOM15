@@ -19,7 +19,7 @@ export default function Checkout() {
     address: '',
   });
   const [cartItems, setCartItems] = useState(() => getCartItems());
-  const [paymentMethod, setPaymentMethod] = useState('momo');
+  const [paymentMethod, setPaymentMethod] = useState('qr_transfer');
   const [saveCustomerInfo, setSaveCustomerInfo] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [toast, setToast] = useState({ visible: false, message: '', type: 'info' });
@@ -73,7 +73,7 @@ export default function Checkout() {
     }).format(Number(value || 0));
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = 2.50;
+  const shipping = 0;
   const tax = subtotal * 0.1;
   const total = subtotal + shipping + tax;
 
@@ -133,14 +133,6 @@ export default function Checkout() {
       const orderRes = await axiosClient.post('/orders', payload);
       const order = orderRes.data?.data;
 
-      if (paymentMethod === 'momo' && order?.id) {
-        try {
-          await axiosClient.post(`/orders/${order.id}/pay`);
-        } catch (payErr) {
-          console.error(payErr);
-        }
-      }
-
       clearCart();
       setCartItems([]);
       if (order?.id) {
@@ -179,7 +171,7 @@ export default function Checkout() {
           {/* Thông tin nhận hàng */}
           <div className="bg-white rounded-3xl p-8 shadow-sm mb-8">
             <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <span className="mr-3">📦</span> Thông tin nhận hàng
+               Thông tin nhận hàng
             </h2>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
@@ -237,7 +229,7 @@ export default function Checkout() {
           {/* Chi tiết đơn hàng */}
           <div className="bg-white rounded-3xl p-8 shadow-sm">
             <h2 className="text-2xl font-bold mb-6 flex items-center">
-              <span className="mr-3">❌</span> Chi tiết đơn hàng
+              Chi tiết đơn hàng
             </h2>
 
             <div className="space-y-4">
@@ -272,7 +264,7 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Phí giao hàng</span>
-                <span className="font-bold">{formatMoney(shipping)}</span>
+                <span className="font-bold text-green-600">Miễn phí</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Thuế (VAT)</span>
@@ -302,20 +294,19 @@ export default function Checkout() {
             {/* Phương thức thanh toán */}
             <div className="mt-8 pt-6 border-t">
               <h3 className="font-bold mb-4 flex items-center">
-                <span className="mr-2">💳</span> Phương thức thanh toán
+                Phương thức thanh toán
               </h3>
 
               <div className="space-y-3">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('momo')}
-                  className={`w-full flex items-center p-3 rounded-full ${paymentMethod === 'momo' ? 'border-2 border-orange-500 bg-orange-50' : 'border border-gray-200'}`}
+                  onClick={() => setPaymentMethod('qr_transfer')}
+                  className={`w-full flex items-center p-3 rounded-full ${paymentMethod === 'qr_transfer' ? 'border-2 border-orange-500 bg-orange-50' : 'border border-gray-200'}`}
                 >
                   <div className="w-8 h-8 rounded-full bg-orange-500 text-white flex items-center justify-center text-sm font-bold mr-3">
-                    V
+                    QR
                   </div>
-                  <span className="font-bold">Vi MoMo</span>
-                  <span className="text-xs text-gray-500 ml-2">Ví điện tử được sử dụng phổ biến</span>
+                  <span className="font-bold">Chuyển khoản QR (mock)</span>
                 </button>
 
                 <button

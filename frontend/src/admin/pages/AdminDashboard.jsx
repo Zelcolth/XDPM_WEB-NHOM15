@@ -177,8 +177,9 @@ const LineChart = ({ title, data, color, unit }) => {
   );
 };
 
-const getOrderPlacedDayKey = (order) => {
-  const rawDate = order?.created_at;
+const getOrderApprovedDayKey = (order) => {
+  // For operational charts, use the latest admin-handled timestamp.
+  const rawDate = order?.updated_at || order?.created_at;
   if (!rawDate) return null;
 
   const rawValue = String(rawDate);
@@ -193,6 +194,12 @@ const getOrderPlacedDayKey = (order) => {
 const isDeliveredOrder = (order) => {
   const status = String(order?.status || '').toLowerCase();
   return status === 'completed' || status === 'delivered';
+};
+
+const isProcessingOrder = (order) => {
+  const status = String(order?.status || '').toLowerCase();
+  // In current flow, paid means customer paid but admin has not completed fulfillment yet.
+  return ['pending', 'paid', 'processing', 'cho_xu_ly'].includes(status);
 };
 
 const getDayKey = (date) => {
@@ -227,10 +234,10 @@ const buildDailySeries = (orders = [], dayCount = 7) => {
   orders.forEach((order) => {
     if (!isDeliveredOrder(order)) return;
 
-    const placedDayKey = getOrderPlacedDayKey(order);
-    if (!placedDayKey) return;
+    const approvedDayKey = getOrderApprovedDayKey(order);
+    if (!approvedDayKey) return;
 
-    const target = mapByDay[placedDayKey];
+    const target = mapByDay[approvedDayKey];
     if (!target) return;
 
     target.delivered += 1;
@@ -280,15 +287,15 @@ export default function AdminDashboard() {
         const orders = orderResult.value;
         const currentMonthKey = getMonthKey(new Date());
         const series = buildDailySeries(orders);
-        const pendingOrders = orders.filter((order) => (order?.status || '').toLowerCase() === 'pending').length;
+        const pendingOrders = orders.filter((order) => isProcessingOrder(order)).length;
 
         const deliveredInCurrentMonth = orders.filter((order) => {
           if (!isDeliveredOrder(order)) return false;
 
-          const placedDayKey = getOrderPlacedDayKey(order);
-          if (!placedDayKey) return false;
+          const approvedDayKey = getOrderApprovedDayKey(order);
+          if (!approvedDayKey) return false;
 
-          return placedDayKey.slice(0, 7) === currentMonthKey;
+          return approvedDayKey.slice(0, 7) === currentMonthKey;
         });
 
         const currentMonthDeliveredOrders = deliveredInCurrentMonth.length;
@@ -360,9 +367,9 @@ export default function AdminDashboard() {
               hint="Đếm các đơn completed / delivered"
             />
             <Card
-              title="Đơn chờ duyệt"
+              title="Đơn chờ xử lý"
               value={summary.pendingOrders}
-              hint="Tính từ trạng thái pending"
+              hint="Tính từ trạng thái pending/paid"
             />
           </div>
 
