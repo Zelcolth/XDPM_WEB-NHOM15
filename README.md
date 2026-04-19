@@ -1,8 +1,8 @@
-# VèoFood - Đồ án đặt món trực tuyến
+# VèoFood - Đồ án đặt món Online
 
 ## 1. Thông tin đồ án
 
-- Tên đề tài: Hệ thống đặt món và quản lý đơn hàng VèoFood
+- Tên đề tài: Hệ thống Website đặt món Online - VèoFood
 - Nhóm: Nhóm 15
 - Mô tả ngắn: Ứng dụng web gồm 2 phân hệ khách hàng và hệ thống quản trị, cho phép đặt món, theo dõi đơn hàng, thanh toán COD/QR mock và quản lý vận hành đơn hàng.
 
